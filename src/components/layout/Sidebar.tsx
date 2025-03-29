@@ -72,7 +72,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
               <span className="text-white font-bold text-xl">M</span>
             </div>
             <h1 className="text-xl font-bold text-monitoro-700 dark:text-monitoro-400">
-              Monitoro
+              Monitor
             </h1>
           </div>
         </div>

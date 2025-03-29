@@ -13,7 +13,7 @@ const Privacy = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-monitoro-500" />
-            Política de Privacidade do Monitoro Connect
+            Política de Privacidade do Monitor Connect
           </CardTitle>
         </CardHeader>
         <CardContent className="prose dark:prose-invert max-w-none">
@@ -23,7 +23,7 @@ const Privacy = () => {
           
           <h2 className="text-xl font-semibold mt-6 mb-3">1. Introdução</h2>
           <p>
-            O Monitoro Connect ("nós", "nosso" ou "aplicativo") está comprometido em proteger a privacidade de todos os nossos usuários. 
+            O Monitor Connect ("nós", "nosso" ou "aplicativo") está comprometido em proteger a privacidade de todos os nossos usuários. 
             Esta Política de Privacidade descreve como coletamos, usamos, armazenamos e compartilhamos suas informações quando você usa nosso aplicativo.
           </p>
           
@@ -106,7 +106,7 @@ const Privacy = () => {
             Se você tiver dúvidas sobre esta Política de Privacidade, entre em contato conosco:
           </p>
           <div className="mb-4">
-            <p><strong>E-mail:</strong> privacy@monitoroconnect.com</p>
+            <p><strong>E-mail:</strong> privacy@monitorconnect.com</p>
             <p><strong>Telefone:</strong> (11) 1234-5678</p>
           </div>
         </CardContent>

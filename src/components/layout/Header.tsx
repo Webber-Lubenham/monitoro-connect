@@ -33,7 +33,7 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
               <span className="text-white font-bold">M</span>
             </div>
             <h1 className="text-lg font-bold text-monitoro-700 dark:text-monitoro-400">
-              {isMobile ? "Monitoro" : "Monitoro Connect"}
+              {isMobile ? "Monitor" : "Monitor Connect"}
             </h1>
           </div>
         </div>

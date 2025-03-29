@@ -159,7 +159,7 @@ const Settings = () => {
               Sobre o aplicativo
             </CardTitle>
             <CardDescription>
-              Informações sobre o Monitoro Connect
+              Informações sobre o Monitor Connect
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

@@ -22,7 +22,7 @@ const Index = () => {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-monitoro-800 dark:text-monitoro-300">
-                    Bem-vindo ao Monitoro Connect
+                    Bem-vindo ao Monitor Connect
                   </h2>
                   <p className="text-gray-600 dark:text-gray-400 mt-1">
                     Gerencie seu compartilhamento de localização e mantenha seus responsáveis informados sobre sua segurança.
