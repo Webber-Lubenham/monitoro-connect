@@ -9,16 +9,98 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      guardian_students: {
+        Row: {
+          created_at: string
+          guardian_id: string
+          id: string
+          is_approved: boolean
+          relation_type: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          guardian_id: string
+          id?: string
+          is_approved?: boolean
+          relation_type: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          guardian_id?: string
+          id?: string
+          is_approved?: boolean
+          relation_type?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guardian_students_guardian_id_fkey"
+            columns: ["guardian_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guardian_students_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          first_name: string
+          id: string
+          last_name: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          first_name: string
+          id: string
+          last_name: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_guardian: {
+        Args: {
+          uid: string
+        }
+        Returns: boolean
+      }
+      is_student: {
+        Args: {
+          uid: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      user_role: "student" | "guardian"
     }
     CompositeTypes: {
       [_ in never]: never
