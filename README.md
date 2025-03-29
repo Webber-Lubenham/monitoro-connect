@@ -1,4 +1,4 @@
-# Monitoro Connect
+# Monitor Connect
 
 A comprehensive student monitoring and safety platform designed for educational institutions in Brazil and the UK.
 
