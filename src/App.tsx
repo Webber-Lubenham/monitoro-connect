@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Guardians from "./pages/Guardians";
 import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
+import Location from "./pages/Location";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/responsaveis" element={<Guardians />} />
             <Route path="/notificacoes" element={<Notifications />} />
             <Route path="/configuracoes" element={<Settings />} />
+            <Route path="/localizacao" element={<Location />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
