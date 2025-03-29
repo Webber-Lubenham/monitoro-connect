@@ -6,6 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Link } from 'react-router-dom';
 
 const Settings = () => {
   return (
@@ -180,9 +181,11 @@ const Settings = () => {
             
             <div className="space-y-1">
               <p className="text-sm font-medium">Política de privacidade</p>
-              <Button variant="link" className="h-auto p-0 text-sm text-monitoro-600">
-                Ler política
-              </Button>
+              <Link to="/privacidade">
+                <Button variant="link" className="h-auto p-0 text-sm text-monitoro-600">
+                  Ler política
+                </Button>
+              </Link>
             </div>
           </CardContent>
         </Card>

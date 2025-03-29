@@ -11,6 +11,7 @@ import Guardians from "./pages/Guardians";
 import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
 import Location from "./pages/Location";
+import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/notificacoes" element={<Notifications />} />
             <Route path="/configuracoes" element={<Settings />} />
             <Route path="/localizacao" element={<Location />} />
+            <Route path="/privacidade" element={<Privacy />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
