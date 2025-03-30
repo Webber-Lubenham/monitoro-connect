@@ -1,7 +1,7 @@
 
 import { serve } from 'https://deno.land/std@0.192.0/http/server.ts';
 import { handleEmailRequest } from './handler.ts';
-import { getDynamicCorsHeaders } from './cors.ts';
+import { getDynamicCorsHeaders } from '../_shared/cors.ts';
 
 // Use the serve function to handle HTTP requests
 serve(async (req) => {
@@ -33,9 +33,11 @@ serve(async (req) => {
     }
     
     // Add all other headers from the original response
-    for (const [key, value] of response.headers.entries()) {
-      if (!headers.has(key)) {
-        headers.set(key, value);
+    if (response.headers) {
+      for (const [key, value] of response.headers.entries()) {
+        if (!headers.has(key)) {
+          headers.set(key, value);
+        }
       }
     }
     
@@ -47,6 +49,7 @@ serve(async (req) => {
     console.error('Unhandled error in send-email edge function:', error);
     return new Response(
       JSON.stringify({
+        success: false,
         error: 'Internal server error',
         details: error instanceof Error ? error.message : String(error),
         origin

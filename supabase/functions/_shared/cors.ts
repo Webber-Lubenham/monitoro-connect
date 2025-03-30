@@ -11,14 +11,14 @@ export const corsHeaders = {
 
 // Get CORS headers based on the request origin
 export const getDynamicCorsHeaders = (origin: string | null) => {
-  // Allow localhost:8080 and production domains
+  // Allow localhost and production domains
   const allowedOrigins = [
     'http://localhost:8080', 
+    'http://localhost:3000',
+    'http://localhost:5173',
     'https://student-sentinel-hub.lovable.app',
     'https://sistema-monitore.com.br',
-    'https://monitoro-connect.lovable.app',
-    'http://localhost:3000',
-    'http://localhost:5173'
+    'https://monitoro-connect.lovable.app'
   ];
   
   console.log(`Received origin: ${origin}`);
