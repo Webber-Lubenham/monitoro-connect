@@ -16,11 +16,17 @@ export const getDynamicCorsHeaders = (origin: string | null) => {
     'http://localhost:8080', 
     'https://student-sentinel-hub.lovable.app',
     'https://sistema-monitore.com.br',
-    'https://monitoro-connect.lovable.app' // Add the missing origin
+    'https://monitoro-connect.lovable.app',
+    'http://localhost:3000',
+    'http://localhost:5173'
   ];
+  
+  console.log(`Received origin: ${origin}`);
   
   // If the origin is in the allowed list, use it; otherwise, use the default
   const requestOrigin = origin && allowedOrigins.includes(origin) ? origin : '*';
+  
+  console.log(`Using origin for CORS: ${requestOrigin}`);
   
   return {
     'Access-Control-Allow-Origin': requestOrigin,

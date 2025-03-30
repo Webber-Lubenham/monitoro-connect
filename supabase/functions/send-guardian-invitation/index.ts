@@ -28,6 +28,8 @@ serve(async (req) => {
     const baseUrl = `${url.protocol}//${url.host}`;
     const emailServiceUrl = `${baseUrl}/functions/v1/email-service`;
     
+    console.log(`Forwarding request to ${emailServiceUrl} with origin: ${origin}`);
+    
     // Forward as guardian-invitation type
     const modifiedBody = {
       type: 'guardian-invitation',
@@ -41,7 +43,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
         'Authorization': req.headers.get('Authorization') || '',
         'x-client-info': req.headers.get('x-client-info') || '',
-        'Origin': req.headers.get('origin') || ''
+        'Origin': origin || ''
       },
       body: JSON.stringify(modifiedBody)
     });
@@ -62,7 +64,8 @@ serve(async (req) => {
       JSON.stringify({
         success: false,
         error: 'Error redirecting to email-service',
-        details: error instanceof Error ? error.message : String(error)
+        details: error instanceof Error ? error.message : String(error),
+        origin: origin
       }),
       {
         headers: corsHeaders,
