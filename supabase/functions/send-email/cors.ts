@@ -21,8 +21,12 @@ export const getDynamicCorsHeaders = (origin: string | null) => {
     'http://localhost:5173'
   ];
   
+  console.log(`Received origin for CORS: ${origin}`);
+  
   // If the origin is in the allowed list, use it; otherwise, use the default
   const requestOrigin = origin && allowedOrigins.includes(origin) ? origin : '*';
+  
+  console.log(`Using origin for CORS: ${requestOrigin}`);
   
   return {
     'Access-Control-Allow-Origin': requestOrigin,
