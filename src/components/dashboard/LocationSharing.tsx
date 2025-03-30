@@ -1,89 +1,62 @@
 
-import React, { useState } from 'react';
-import { MapPin, Clock, Share2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import MapPreview from '@/components/common/MapPreview';
-import StatusBadge from '@/components/common/StatusBadge';
+import { Send, Smartphone, Wifi, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useLocationTracking } from "@/hooks/location";
+import LocationHeader from "./LocationHeader";
 
-const LocationSharing = () => {
-  const [isSharing, setIsSharing] = useState(false);
-  const [sharingMode, setSharingMode] = useState<'realtime' | 'scheduled'>('realtime');
-  
+interface LocationSharingProps {
+  onLocationUpdate: (location: { latitude: number; longitude: number }) => void;
+  locationError?: string | null;
+}
+
+const LocationSharing = ({ onLocationUpdate, locationError }: LocationSharingProps) => {
+  const { isSharing, accuracy, error, startSharing, stopSharing, refreshLocation } = useLocationTracking(onLocationUpdate);
+
+  const handleShareLocation = () => {
+    if (!isSharing) {
+      startSharing();
+    } else {
+      stopSharing();
+    }
+  };
+
+  // Determine which error to display (priority to the hook's error)
+  const displayError = error || locationError;
+
   return (
-    <Card className="card-gradient">
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-center">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-monitoro-500" />
-              Compartilhamento de Localização
-            </CardTitle>
-            <CardDescription>
-              Gerencie como sua localização é compartilhada
-            </CardDescription>
-          </div>
-          <StatusBadge 
-            status={isSharing ? 'active' : 'inactive'} 
-            label={isSharing ? 'Compartilhando' : 'Desativado'}
-          />
-        </div>
-      </CardHeader>
-      <CardContent className="pt-4">
-        <div className="mb-4">
-          <div className="flex items-center space-x-2 mb-4">
-            <Switch 
-              id="location-switch" 
-              checked={isSharing}
-              onCheckedChange={setIsSharing}
-            />
-            <Label htmlFor="location-switch">
-              {isSharing ? 'Compartilhamento ativado' : 'Compartilhamento desativado'}
-            </Label>
-          </div>
-          
-          <div className="space-y-2 mb-4">
-            <div className="flex items-center space-x-2">
-              <input
-                type="radio"
-                id="realtime"
-                name="sharingMode"
-                checked={sharingMode === 'realtime'}
-                onChange={() => setSharingMode('realtime')}
-                className="text-monitoro-500"
-              />
-              <label htmlFor="realtime" className="flex items-center gap-1">
-                <Share2 className="h-4 w-4" />
-                Tempo real
-              </label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <input
-                type="radio"
-                id="scheduled"
-                name="sharingMode"
-                checked={sharingMode === 'scheduled'}
-                onChange={() => setSharingMode('scheduled')}
-                className="text-monitoro-500"
-              />
-              <label htmlFor="scheduled" className="flex items-center gap-1">
-                <Clock className="h-4 w-4" />
-                Programado
-              </label>
-            </div>
-          </div>
-        </div>
-        
-        <MapPreview className="mt-4" />
-      </CardContent>
-      <CardFooter>
-        <Button variant="outline" className="w-full">
-          Configurações avançadas
+    <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
+      <LocationHeader isSharing={isSharing} accuracy={accuracy} error={displayError} />
+      <div className="flex gap-2 w-full md:w-auto">
+        <Button
+          variant={isSharing ? "destructive" : "default"}
+          onClick={handleShareLocation}
+          className="flex-1 md:flex-auto transition-all duration-300 hover:scale-105"
+          size="lg"
+        >
+          {isSharing ? (
+            <>
+              <Wifi className="mr-2 h-5 w-5 animate-pulse" />
+              Pausar Tempo Real
+            </>
+          ) : (
+            <>
+              <Smartphone className="mr-2 h-5 w-5" />
+              Compartilhar em Tempo Real
+            </>
+          )}
         </Button>
-      </CardFooter>
-    </Card>
+        
+        <Button
+          variant="outline"
+          onClick={refreshLocation}
+          className="transition-all duration-300 hover:scale-105"
+          size="lg"
+          title="Atualizar localização"
+        >
+          <RefreshCw className="h-5 w-5" />
+        </Button>
+      </div>
+    </div>
   );
 };
 

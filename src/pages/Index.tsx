@@ -1,85 +1,190 @@
 
-import React from 'react';
-import { AlertTriangle, ShieldCheck } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import LocationSharing from '@/components/dashboard/LocationSharing';
-import EmergencyButton from '@/components/dashboard/EmergencyButton';
-import NotificationCenter from '@/components/dashboard/NotificationCenter';
-import GuardiansList from '@/components/guardians/GuardiansList';
+import { Card } from "@/components/ui/card";
+import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { LoginForm } from "@/components/auth/LoginForm";
+import { SignupForm } from "@/components/auth/SignupForm";
+import { PasswordResetForm } from "@/components/auth/PasswordResetForm";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { STORAGE_KEY } from "@/integrations/supabase/config";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 const Index = () => {
-  return (
-    <div className="container mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <Card className="bg-gradient-to-br from-monitoro-50 to-white dark:from-gray-800 dark:to-gray-900 border-monitoro-100 dark:border-gray-700 overflow-hidden">
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <div className="h-14 w-14 bg-monitoro-100 dark:bg-monitoro-900/20 rounded-lg flex items-center justify-center">
-                  <ShieldCheck className="h-8 w-8 text-monitoro-600 dark:text-monitoro-400" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-monitoro-800 dark:text-monitoro-300">
-                    Bem-vindo ao Monitor Connect
-                  </h2>
-                  <p className="text-gray-600 dark:text-gray-400 mt-1">
-                    Gerencie seu compartilhamento de localização e mantenha seus responsáveis informados sobre sua segurança.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [connectionError, setConnectionError] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    let isMounted = true;
+    let sessionCheckAttempts = 0;
+    const MAX_ATTEMPTS = 3;
+    
+    // Check if user is already logged in
+    const checkSession = async () => {
+      try {
+        sessionCheckAttempts++;
+        console.log("Verificando sessão de usuário...");
+        
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Erro ao verificar sessão:", error);
           
-          <LocationSharing />
+          if (sessionCheckAttempts >= MAX_ATTEMPTS) {
+            if (isMounted) {
+              setConnectionError(true);
+              setIsLoading(false);
+            }
+          } else {
+            // Try again in 2 seconds (with increasing delay)
+            setTimeout(checkSession, 2000 * sessionCheckAttempts);
+          }
+          return;
+        }
+        
+        if (data.session && isMounted) {
+          console.log("Sessão encontrada:", data.session.user.id);
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="card-gradient p-4">
-              <h3 className="font-medium mb-3 flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-red-500" />
-                Alerta de Emergência
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Use em situações de risco para notificar todos os seus responsáveis imediatamente.
-              </p>
-              <EmergencyButton />
-            </Card>
-            
-            <div className="flex flex-col">
-              <div className="bg-white dark:bg-gray-800 rounded-lg border p-4 mb-4">
-                <h3 className="font-medium">Dica de Segurança</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  Mantenha sempre seus dados de contato atualizados para garantir que seus responsáveis possam te encontrar quando necessário.
+          // Manually verify if session is still valid by checking token expiry
+          const tokenExpiry = data.session.expires_at;
+          const now = Math.floor(Date.now() / 1000);
+          
+          if (tokenExpiry && tokenExpiry < now) {
+            console.log("Sessão expirada, limpando dados.");
+            // Session expired, clear it
+            await supabase.auth.signOut();
+            localStorage.removeItem(STORAGE_KEY);
+            sessionStorage.removeItem(STORAGE_KEY);
+            setIsLoading(false);
+            return;
+          }
+          
+          // User is already logged in, check role and redirect
+          const userRole = data.session.user.user_metadata?.role || 'student';
+          console.log("Função do usuário:", userRole);
+          
+          if (userRole === 'guardian' || userRole === 'parent') {
+            navigate('/parent-dashboard', { replace: true });
+          } else {
+            navigate('/dashboard', { replace: true });
+          }
+        } else if (isMounted) {
+          console.log("Nenhuma sessão ativa encontrada.");
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error("Erro ao verificar sessão:", error);
+        if (isMounted) {
+          setConnectionError(true);
+          setIsLoading(false);
+        }
+      }
+    };
+
+    checkSession();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [navigate]);
+
+  const handleSignupSuccess = () => {
+    const loginTab = document.querySelector('[value="login"]') as HTMLElement;
+    if (loginTab) {
+      loginTab.click();
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+          <p className="mt-2 text-sm text-gray-500">Verificando sessão...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (connectionError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-secondary">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-md px-4"
+        >
+          <Card className="p-8 backdrop-blur-sm bg-white/80">
+            <div className="text-center space-y-6">
+              <div className="space-y-2">
+                <h1 className="text-3xl font-bold tracking-tight text-gray-900">Erro de Conexão</h1>
+                <p className="text-gray-500">
+                  Não foi possível conectar ao servidor. Verifique sua conexão com a internet.
                 </p>
               </div>
               
-              <div className="flex-1 bg-gradient-to-br from-monitoro-100 to-white dark:from-monitoro-900/10 dark:to-gray-800 rounded-lg border border-monitoro-200 dark:border-monitoro-800/20 p-4">
-                <h3 className="font-medium text-monitoro-800 dark:text-monitoro-300">Status do Sistema</h3>
-                <div className="mt-2 space-y-1">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Compartilhamento:</span>
-                    <span className="text-sm font-medium text-green-600 dark:text-green-400">Online</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Notificações:</span>
-                    <span className="text-sm font-medium text-green-600 dark:text-green-400">Ativas</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Última sincronização:</span>
-                    <span className="text-sm">há 2 minutos</span>
-                  </div>
-                </div>
-              </div>
+              <Button
+                onClick={() => window.location.reload()}
+                className="w-full"
+              >
+                Tentar novamente
+              </Button>
             </div>
-          </div>
-        </div>
-        
-        <div className="space-y-6">
-          <GuardiansList />
-          <NotificationCenter />
-        </div>
+          </Card>
+        </motion.div>
       </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-secondary">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md px-4"
+      >
+        <Card className="p-8 backdrop-blur-sm bg-white/80">
+          <div className="text-center space-y-6">
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold tracking-tight text-gray-900">Monitore</h1>
+              <p className="text-gray-500">
+                Conecte-se para compartilhar sua localização com seus responsáveis
+              </p>
+            </div>
+
+            {isResettingPassword ? (
+              <PasswordResetForm onCancel={() => setIsResettingPassword(false)} />
+            ) : (
+              <Tabs defaultValue="login" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="login">Login</TabsTrigger>
+                  <TabsTrigger value="signup">Cadastro</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="login" className="mt-4">
+                  <LoginForm onResetPassword={() => setIsResettingPassword(true)} />
+                </TabsContent>
+
+                <TabsContent value="signup" className="mt-4">
+                  <SignupForm onSignupSuccess={handleSignupSuccess} />
+                </TabsContent>
+              </Tabs>
+            )}
+
+            {!isResettingPassword && (
+              <p className="text-sm text-gray-500 mt-4">
+                Ao entrar, você concorda com nossos Termos de Serviço e Política de Privacidade
+              </p>
+            )}
+          </div>
+        </Card>
+      </motion.div>
     </div>
   );
 };

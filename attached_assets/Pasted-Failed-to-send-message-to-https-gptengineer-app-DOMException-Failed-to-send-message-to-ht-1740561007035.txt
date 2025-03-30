@@ -1,0 +1,357 @@
+<<<<<<< HEAD
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+at t.value (https://b005a29c-512c-4c97-8815-cd33300e8e02-00-2ok39b2dfo941.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://b005a29c-512c-4c97-8815-cd33300e8e02-00-2ok39b2dfo941.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://b005a29c-512c-4c97-8815-cd33300e8e02-00-2ok39b2dfo941.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://b005a29c-512c-4c97-8815-cd33300e8e02-00-2ok39b2dfo941.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+=======
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+at t.value (https://b005a29c-512c-4c97-8815-cd33300e8e02-00-2ok39b2dfo941.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://b005a29c-512c-4c97-8815-cd33300e8e02-00-2ok39b2dfo941.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://b005a29c-512c-4c97-8815-cd33300e8e02-00-2ok39b2dfo941.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://b005a29c-512c-4c97-8815-cd33300e8e02-00-2ok39b2dfo941.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+
+Failed to send message to http://localhost:3000: 
+DOMException {}
+
+Failed to send message to https://lovable.dev: 
+DOMException {}
+
+Failed to send message to https://gptengineer.app: 
+DOMException {}
+>>>>>>> 533f9328dc5ea3af26fc81227410cae5fe20a8f2

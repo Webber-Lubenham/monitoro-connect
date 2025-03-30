@@ -1,3 +1,4 @@
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
@@ -39,4 +40,23 @@
 
 .read-the-docs {
   color: #888;
+}
+
+/* Corrigindo problemas de toque em dispositivos móveis */
+@media (max-width: 768px) {
+  button {
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  
+  input, select, textarea {
+    font-size: 16px; /* Evita zoom automático em iOS */
+  }
+}
+
+/* Evitando problemas de scroll em dispositivos móveis */
+html, body {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
 }

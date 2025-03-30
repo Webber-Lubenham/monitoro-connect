@@ -1,111 +1,72 @@
 
-import React, { useState } from 'react';
-import { AlertTriangle, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
+import { Button } from "@/components/ui/button";
+import { AlertTriangle, Loader2, MessageSquare } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import { useIsMobile } from '@/hooks/use-mobile';
 
-const EmergencyButton = () => {
-  const [emergencyPressed, setEmergencyPressed] = useState(false);
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+interface EmergencyButtonProps {
+  location: { latitude: number; longitude: number } | null;
+  onEmergency: (location: { latitude: number; longitude: number }) => void;
+  isNotifying?: boolean;
+  error?: string | null;
+}
+
+const EmergencyButton = ({ location, onEmergency, isNotifying = false, error = null }: EmergencyButtonProps) => {
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
-  const handleEmergencyPress = () => {
-    setConfirmDialogOpen(true);
-  };
-
-  const confirmEmergency = () => {
-    setEmergencyPressed(true);
-    setConfirmDialogOpen(false);
-    toast({
-      title: "Alerta de emergência enviado",
-      description: "Todos os seus responsáveis foram notificados.",
-      variant: "destructive",
-    });
-  };
-
-  const cancelEmergency = () => {
-    setEmergencyPressed(false);
-    toast({
-      title: "Alerta de emergência cancelado",
-      description: "Seus responsáveis foram notificados que você está bem.",
-    });
+  const handleEmergency = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (isNotifying) return; // Prevent multiple clicks
+    
+    if (location) {
+      onEmergency(location);
+    } else {
+      toast({
+        title: "Erro de localização",
+        description: "Não foi possível obter sua localização atual.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
-    <>
-      {emergencyPressed ? (
-        <div className="bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2 text-red-700 dark:text-red-400">
-              <AlertTriangle className="h-5 w-5" />
-              <span className="font-medium">Alerta de emergência ativo</span>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/30"
-              onClick={cancelEmergency}
-            >
-              <X className="h-4 w-4 mr-1" />
-              Cancelar
-            </Button>
-          </div>
-          <p className="text-sm text-red-600 dark:text-red-300 mt-1">
-            Seus responsáveis foram notificados e estão visualizando sua localização em tempo real.
+    <div>
+      <Button 
+        variant="destructive" 
+        className={`w-full py-6 text-lg font-semibold transition-all duration-300 hover:scale-105 active:scale-100 shadow-lg ${isMobile ? 'text-base py-5' : ''}`}
+        onClick={handleEmergency}
+        disabled={isNotifying}
+        type="button"
+      >
+        {isNotifying ? (
+          <>
+            <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+            Enviando alerta...
+          </>
+        ) : (
+          <>
+            <AlertTriangle className="mr-2 h-6 w-6" />
+            Alerta de Emergência
+            <MessageSquare className="ml-2 h-4 w-4" />
+          </>
+        )}
+      </Button>
+      
+      <p className="text-sm text-gray-500 mt-3 text-center">
+        Em caso de emergência, clique no botão acima para notificar seus responsáveis imediatamente via SMS e e-mail
+      </p>
+      
+      {!location && !error && (
+        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-center">
+          <p className="text-red-600 text-sm">
+            Erro de localização: Não foi possível obter sua localização atual.
           </p>
         </div>
-      ) : (
-        <Button 
-          variant="outline" 
-          className="w-full h-14 text-lg bg-white border-red-300 text-red-700 hover:bg-red-50 dark:bg-gray-900 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
-          onClick={handleEmergencyPress}
-        >
-          <AlertTriangle className="h-5 w-5 mr-2" />
-          Botão de Emergência
-        </Button>
       )}
-
-      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-center text-red-600 dark:text-red-400 flex items-center justify-center gap-2">
-              <AlertTriangle />
-              Confirmação de Emergência
-            </DialogTitle>
-            <DialogDescription className="text-center pt-2">
-              Ao confirmar, um alerta será enviado para todos os seus responsáveis cadastrados junto com sua localização atual.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-4 py-4">
-            <p className="text-center font-medium">Você está em uma situação de emergência?</p>
-          </div>
-          <DialogFooter className="sm:justify-center gap-2">
-            <Button 
-              type="button" 
-              variant="outline"
-              onClick={() => setConfirmDialogOpen(false)}
-            >
-              Cancelar
-            </Button>
-            <Button 
-              type="button" 
-              variant="destructive"
-              onClick={confirmEmergency}
-            >
-              Confirmar Emergência
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+    </div>
   );
 };
 
