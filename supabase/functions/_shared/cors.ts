@@ -15,7 +15,8 @@ export const getDynamicCorsHeaders = (origin: string | null) => {
   const allowedOrigins = [
     'http://localhost:8080', 
     'https://student-sentinel-hub.lovable.app',
-    'https://sistema-monitore.com.br'
+    'https://sistema-monitore.com.br',
+    'https://monitoro-connect.lovable.app' // Add the missing origin
   ];
   
   // If the origin is in the allowed list, use it; otherwise, use the default
