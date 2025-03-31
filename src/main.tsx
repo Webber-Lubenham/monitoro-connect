@@ -1,42 +1,28 @@
-<<<<<<< HEAD
-
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import App from './App';
-import { supabase } from './lib/supabase';
+import App from './App.tsx';
+import { supabase } from './lib/supabase.ts';
 import './index.css';
+import { TempoDevtools } from "tempo-devtools";
+import { AuthChangeEvent, Session } from '@supabase/supabase-js';
+
+// Initialize Tempo Devtools
+TempoDevtools.init();
 
 // Initialize Supabase auth listener
-supabase.auth.onAuthStateChange((event, session) => {
+supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
   if (event === 'SIGNED_OUT') {
     localStorage.clear(); // Clear all storage on sign out
   }
 });
 
+const basename = (import.meta as any).env.BASE_URL;
+
 createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
-  </React.StrictMode>
-=======
-import React from "react";
-import ReactDOM from "react-dom/client";
-import App from "./App.tsx";
-import "./index.css";
-import { BrowserRouter } from "react-router-dom";
-
-import { TempoDevtools } from "tempo-devtools";
-TempoDevtools.init();
-
-const basename = import.meta.env.BASE_URL;
-
-ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <BrowserRouter basename={basename}>
       <App />
     </BrowserRouter>
-  </React.StrictMode>,
->>>>>>> helper/main
+  </React.StrictMode>
 );
