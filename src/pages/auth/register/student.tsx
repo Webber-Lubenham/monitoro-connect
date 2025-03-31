@@ -1,10 +1,11 @@
+
 import React, { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { supabase } from "../../../lib/supabase.ts"
 import { Button } from "../../../components/ui/button.tsx"
 import { Input } from "../../../components/ui/input.tsx"
 import { Card, CardHeader, CardContent, CardFooter } from "../../../components/ui/card.tsx"
-import { toast } from "../../../components/ui/sonner.tsx"
+import { Toaster } from "../../../components/ui/sonner.tsx"
 import { z } from 'zod'
 
 const studentSchema = z.object({
@@ -90,14 +91,14 @@ export function StudentRegisterPage() {
         throw new Error('Signup failed - no user returned')
       }
 
-      toast.success("Cadastro realizado com sucesso! Por favor, verifique seu email.")
+      console.log("Cadastro realizado com sucesso! Por favor, verifique seu email.")
       navigate("/login")
     } catch (error) {
       if (error instanceof z.ZodError) {
-        toast.error(error.errors[0].message)
+        console.error(error.errors[0].message)
       } else {
         console.error('Registration error:', error)
-        toast.error("Erro durante o cadastro. Por favor, tente novamente.")
+        console.error("Erro durante o cadastro. Por favor, tente novamente.")
       }
     } finally {
       setLoading(false)

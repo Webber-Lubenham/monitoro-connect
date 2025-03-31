@@ -1,11 +1,7 @@
-import { z } from 'zod'
-import { createEnv } from '@t3-oss/env-core'
 
-export const env = createEnv({
-  server: {},
-  client: {
-    VITE_SUPABASE_URL: z.string().url(),
-    VITE_SUPABASE_ANON_KEY: z.string().min(1),
-  },
-  runtimeEnv: import.meta.env,
-})
+// Create a simplified version without the dependency
+export const env = {
+  // Client-side environment variables
+  VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL as string,
+  VITE_SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY as string,
+}

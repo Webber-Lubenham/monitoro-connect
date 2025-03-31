@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabase";
 
 export async function sendNotification(data: {
@@ -24,8 +25,9 @@ export async function sendNotification(data: {
     }
     
     return response;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error sending notification:', error);
-    throw new Error(`Failed to send notification: ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    throw new Error(`Failed to send notification: ${errorMessage}`);
   }
 }

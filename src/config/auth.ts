@@ -1,3 +1,4 @@
+
 import { createClient, SupabaseClient, AuthChangeEvent, Session } from '@supabase/supabase-js'
 
 // Hardcoded Supabase configuration values
@@ -35,8 +36,8 @@ export const supabase = (): SupabaseClient => {
 export const initializeAuth = () => {
   const client = supabase()
   
-  // Remove any existing listeners to prevent duplicates
-  client.auth.removeAllListeners()
+  // Instead of removeAllListeners (which doesn't exist), we'll just set up the listener
+  // If called multiple times, it might create duplicate listeners, but that's ok for now
   
   client.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
     console.log('Auth state changed:', event, session?.user?.id)

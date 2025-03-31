@@ -1,10 +1,11 @@
+
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { supabase } from "../../../lib/supabase"  // Updated import path
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card"
-import { toast } from "@/components/ui/sonner"
+import { Toaster } from "@/components/ui/sonner"
 
 export function ParentRegisterPage() {
   const navigate = useNavigate()
@@ -35,10 +36,10 @@ export function ParentRegisterPage() {
 
       if (error) throw error
 
-      toast.success("Registration successful! Please check your email.")
+      console.success("Registration successful! Please check your email.")
       navigate("/login")
     } catch (error) {
-      toast.error("Error during registration")
+      console.error("Error during registration", error)
     } finally {
       setLoading(false)
     }

@@ -1,10 +1,10 @@
+
 import { RouterProviderProps } from 'react-router-dom';
 
 export const routerConfig: Partial<RouterProviderProps> = {
   future: {
     v7_startTransition: true,
-    v7_relativeSplatPath: true,
-    v7_prependBasename: true
+    // Remove the invalid property v7_relativeSplatPath
   },
   basename: '/'
 };

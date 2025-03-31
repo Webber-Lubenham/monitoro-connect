@@ -41,7 +41,9 @@ const signupSchema = z.object({
 type SignupFormValues = z.infer<typeof signupSchema>;
 
 const Signup = () => {
-  const { signUp, isLoading } = useAuth();
+  const auth = useAuth();
+  const { signUp } = auth;
+  const isLoading = auth.isLoading ?? false;
   const [step, setStep] = useState(1);
 
   const form = useForm<SignupFormValues>({
@@ -62,11 +64,13 @@ const Signup = () => {
       return;
     }
 
-    await signUp(values.email, values.password, {
-      first_name: values.firstName,
-      last_name: values.lastName,
-      role: values.role,
-    });
+    if (signUp) {
+      await signUp(values.email, values.password, {
+        first_name: values.firstName,
+        last_name: values.lastName,
+        role: values.role,
+      });
+    }
   };
 
   return (

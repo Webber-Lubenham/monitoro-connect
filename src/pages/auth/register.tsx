@@ -1,8 +1,9 @@
+
 import { Link, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card"
 import { supabase } from "@/lib/supabase"
-import { toast } from "@/components/ui/sonner"
+import { Toaster } from "@/components/ui/sonner"
 
 export function RegisterPage() {
   const navigate = useNavigate()
@@ -11,7 +12,7 @@ export function RegisterPage() {
     try {
       navigate("/register/parent")
     } catch (error) {
-      toast.error("Failed to proceed to parent registration")
+      console.error("Failed to proceed to parent registration", error)
     }
   }
 
@@ -19,7 +20,7 @@ export function RegisterPage() {
     try {
       navigate("/register/student")
     } catch (error) {
-      toast.error("Failed to proceed to student registration")
+      console.error("Failed to proceed to student registration", error)
     }
   }
 

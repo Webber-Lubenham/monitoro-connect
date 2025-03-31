@@ -1,7 +1,8 @@
+
 import { Navigate } from 'react-router-dom';
 import { LoginPage } from "./pages/auth/Login"; 
-import { RegisterPage } from "./pages/auth/Register"; 
-import { DashboardPage } from "./pages/Dashboard"; 
+import { RegisterPage } from "./pages/auth/register"; 
+import Dashboard from "./pages/Dashboard"; // Changed to match the actual export
 import { ProfilePage } from "./pages/Profile"; 
 
 export const routes = [
@@ -19,7 +20,7 @@ export const routes = [
   },
   {
     path: "/dashboard",
-    element: <DashboardPage />
+    element: <Dashboard />
   },
   {
     path: "/profile",

@@ -5,6 +5,7 @@ import { createBrowserRouter } from 'react-router-dom';
 export const routerConfig = {
   future: {
     v7_startTransition: true
+    // Remove the invalid property v7_relativeSplatPath
   }
 };
 

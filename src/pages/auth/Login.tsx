@@ -1,12 +1,10 @@
+
 import React, { useState } from "react";
-
 import { Link } from "react-router-dom";
-import { Button } from "../components/ui/button"; 
-import { Input } from "../components/ui/input"; 
-import { Card, CardHeader, CardContent, CardFooter } from "../components/ui/card"; 
-import { useAuth } from "../contexts/AuthContext"; 
-
-
+import { Button } from "@/components/ui/button"; 
+import { Input } from "@/components/ui/input"; 
+import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card"; 
+import { useAuth } from "@/contexts/AuthContext"; 
 
 export function LoginPage() {
   const { signIn } = useAuth();
@@ -16,9 +14,7 @@ export function LoginPage() {
     password: "",
   });
 
-const handleSubmit = async (e: React.FormEvent) => {
-
-
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     await signIn(formData.email, formData.password);
@@ -36,14 +32,14 @@ const handleSubmit = async (e: React.FormEvent) => {
             type="email"
             placeholder="Email"
             value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, email: e.target.value })}
             required
           />
           <Input
             type="password"
             placeholder="Senha"
             value={formData.password}
-            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, password: e.target.value })}
             required
           />
         </CardContent>
