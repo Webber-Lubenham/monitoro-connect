@@ -1,6 +1,6 @@
 
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from './types';
+import type { Database } from './database.types';
 import { CustomStorageAPI } from './storage';
 import { retryFetch } from './fetch-utils';
 import { STORAGE_KEY, supabaseUrl, supabaseAnonKey } from './config';

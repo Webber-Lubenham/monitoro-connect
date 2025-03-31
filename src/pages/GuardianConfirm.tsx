@@ -8,12 +8,26 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, CheckCircle, AlertCircle } from "lucide-react";
 
+interface GuardianData {
+  id: string;
+  student_id: string;
+  nome: string;
+  telefone?: string;
+  email: string;
+  is_primary: boolean;
+  created_at: string;
+  updated_at: string;
+  cpf?: string;
+  temp_password?: string;
+  status?: string;
+}
+
 const GuardianConfirm = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
   
-  const [guardian, setGuardian] = useState<any>(null);
+  const [guardian, setGuardian] = useState<GuardianData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -30,9 +44,10 @@ const GuardianConfirm = () => {
         const searchParams = new URLSearchParams(location.search);
         const token = searchParams.get("token");
         const email = searchParams.get("email");
+        const guardianId = searchParams.get("guardian_id");
         
-        if (!token || !email) {
-          setError("Link de confirmação inválido. Por favor, solicite um novo convite.");
+        if (!token || !email || !guardianId) {
+          setError("Invalid confirmation link. Please request a new invitation.");
           setIsLoading(false);
           return;
         }
@@ -41,29 +56,29 @@ const GuardianConfirm = () => {
         const { data, error: fetchError } = await supabase
           .from("guardians")
           .select("*")
-          .eq("id", token)
+          .eq("id", guardianId)
           .eq("email", email)
           .maybeSingle();
         
         if (fetchError || !data) {
           console.error("Error fetching guardian:", fetchError);
-          setError("Não foi possível verificar suas informações. Por favor, solicite um novo convite.");
+          setError("Could not verify your information. Please request a new invitation.");
           setIsLoading(false);
           return;
         }
         
         // Check if guardian status is pending
         if (data.status && data.status !== "pending") {
-          setError("Este convite já foi utilizado ou cancelado.");
+          setError("This invitation has already been used or canceled.");
           setIsLoading(false);
           return;
         }
         
-        setGuardian(data);
+        setGuardian(data as GuardianData);
         setIsLoading(false);
       } catch (error) {
         console.error("Error in guardian confirmation:", error);
-        setError("Ocorreu um erro ao processar seu convite. Por favor, tente novamente.");
+        setError("An error occurred while processing your invitation. Please try again.");
         setIsLoading(false);
       }
     };
@@ -74,6 +89,11 @@ const GuardianConfirm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!guardian) {
+      setError("Guardian information not found.");
+      return;
+    }
+    
     try {
       setIsSubmitting(true);
       
@@ -81,8 +101,8 @@ const GuardianConfirm = () => {
       if (password.length < 6) {
         toast({
           variant: "destructive",
-          title: "Senha muito curta",
-          description: "A senha deve ter pelo menos 6 caracteres."
+          title: "Password too short",
+          description: "Password must be at least 6 characters."
         });
         setIsSubmitting(false);
         return;
@@ -91,8 +111,8 @@ const GuardianConfirm = () => {
       if (password !== confirmPassword) {
         toast({
           variant: "destructive",
-          title: "Senhas não coincidem",
-          description: "As senhas digitadas não são iguais."
+          title: "Passwords don't match",
+          description: "The passwords you entered don't match."
         });
         setIsSubmitting(false);
         return;
@@ -128,8 +148,8 @@ const GuardianConfirm = () => {
       // Success
       setIsSuccess(true);
       toast({
-        title: "Conta ativada com sucesso!",
-        description: "Você já pode fazer login e acompanhar o estudante."
+        title: "Account activated successfully!",
+        description: "You can now log in and track the student."
       });
       
       // Redirect to login page after 3 seconds
@@ -144,14 +164,14 @@ const GuardianConfirm = () => {
       if (error.message && error.message.includes("already exists")) {
         toast({
           variant: "destructive",
-          title: "Email já cadastrado",
-          description: "Este email já está em uso. Por favor, faça login ou use outro email."
+          title: "Email already registered",
+          description: "This email is already in use. Please log in or use another email."
         });
       } else {
         toast({
           variant: "destructive",
-          title: "Erro ao ativar conta",
-          description: error.message || "Ocorreu um erro ao ativar sua conta. Por favor, tente novamente."
+          title: "Error activating account",
+          description: error.message || "An error occurred while activating your account. Please try again."
         });
       }
     } finally {
@@ -165,7 +185,7 @@ const GuardianConfirm = () => {
         <Card className="p-8 w-full max-w-md mx-4">
           <div className="flex flex-col items-center justify-center space-y-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p>Verificando informações do convite...</p>
+            <p>Verifying invitation information...</p>
           </div>
         </Card>
       </div>
@@ -178,10 +198,10 @@ const GuardianConfirm = () => {
         <Card className="p-8 w-full max-w-md mx-4">
           <div className="flex flex-col items-center justify-center space-y-4">
             <AlertCircle className="h-12 w-12 text-destructive" />
-            <h2 className="text-xl font-semibold text-center">Erro na Confirmação</h2>
+            <h2 className="text-xl font-semibold text-center">Confirmation Error</h2>
             <p className="text-center text-gray-600">{error}</p>
             <Button onClick={() => navigate("/")} className="w-full">
-              Voltar para Login
+              Back to Login
             </Button>
           </div>
         </Card>
@@ -195,12 +215,12 @@ const GuardianConfirm = () => {
         <Card className="p-8 w-full max-w-md mx-4">
           <div className="flex flex-col items-center justify-center space-y-4">
             <CheckCircle className="h-12 w-12 text-green-500" />
-            <h2 className="text-xl font-semibold text-center">Conta Ativada!</h2>
+            <h2 className="text-xl font-semibold text-center">Account Activated!</h2>
             <p className="text-center text-gray-600">
-              Sua conta foi ativada com sucesso. Você já pode fazer login para acompanhar o estudante.
+              Your account has been activated successfully. You can now log in to track the student.
             </p>
             <Button onClick={() => navigate("/")} className="w-full">
-              Ir para Login
+              Go to Login
             </Button>
           </div>
         </Card>
@@ -213,10 +233,10 @@ const GuardianConfirm = () => {
       <Card className="p-8 w-full max-w-md mx-4">
         <div className="space-y-6">
           <div className="space-y-2 text-center">
-            <h1 className="text-2xl font-bold">Ativar Conta de Responsável</h1>
+            <h1 className="text-2xl font-bold">Activate Guardian Account</h1>
             <p className="text-gray-500">
-              Olá {guardian?.nome}, você foi convidado para acompanhar um estudante no Sistema Monitore.
-              Complete seu cadastro para continuar.
+              Hello {guardian?.nome}, you have been invited to track a student on the Monitore System.
+              Complete your registration to continue.
             </p>
           </div>
           
@@ -236,7 +256,7 @@ const GuardianConfirm = () => {
               />
               <Input
                 type="password"
-                placeholder="Crie uma senha"
+                placeholder="Create a password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -244,7 +264,7 @@ const GuardianConfirm = () => {
               />
               <Input
                 type="password"
-                placeholder="Confirme sua senha"
+                placeholder="Confirm your password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
@@ -260,10 +280,10 @@ const GuardianConfirm = () => {
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Ativando...
+                  Activating...
                 </>
               ) : (
-                "Ativar Conta"
+                "Activate Account"
               )}
             </Button>
           </form>

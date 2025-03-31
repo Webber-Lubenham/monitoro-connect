@@ -1,8 +1,12 @@
-import { RouterProviderProps } from 'react-router-dom';
 
-export const routerConfig: Partial<RouterProviderProps> = {
+import { createBrowserRouter } from 'react-router-dom';
+
+// Configuration for React Router v6
+export const routerConfig = {
   future: {
-    v7_startTransition: true,
-    v7_relativeSplatPath: true
+    v7_startTransition: true
   }
 };
+
+// Export the configuration
+export default routerConfig;
