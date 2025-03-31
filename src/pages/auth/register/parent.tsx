@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card"
 import { Toaster } from "@/components/ui/sonner"
+import { toast } from "sonner" // Properly import toast
 
 export function ParentRegisterPage() {
   const navigate = useNavigate()
@@ -36,10 +37,12 @@ export function ParentRegisterPage() {
 
       if (error) throw error
 
-      console.success("Registration successful! Please check your email.")
+      // Replace console.success with toast.success
+      toast.success("Registration successful! Please check your email.")
       navigate("/login")
     } catch (error) {
       console.error("Error during registration", error)
+      toast.error("Error during registration. Please try again.")
     } finally {
       setLoading(false)
     }
@@ -85,6 +88,7 @@ export function ParentRegisterPage() {
           </Button>
         </CardFooter>
       </form>
+      <Toaster />
     </Card>
   )
 }

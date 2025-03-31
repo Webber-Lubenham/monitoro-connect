@@ -5,8 +5,8 @@ export const routerConfig: Partial<RouterProviderProps> = {
   future: {
     v7_startTransition: true,
     // Remove the invalid property v7_relativeSplatPath
-  },
-  basename: '/'
+  }
+  // Removed basename property as it's not valid on RouterProviderProps
 };
 
 export const getRouterConfig = () => routerConfig;
