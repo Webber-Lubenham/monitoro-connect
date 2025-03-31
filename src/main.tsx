@@ -4,11 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App.tsx';
 import { supabase } from './lib/supabase.ts';
 import './index.css';
-import { TempoDevtools } from "tempo-devtools";
 import { AuthChangeEvent, Session } from '@supabase/supabase-js';
-
-// Initialize Tempo Devtools
-TempoDevtools.init();
 
 // Initialize Supabase auth listener
 supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
