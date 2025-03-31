@@ -1,9 +1,14 @@
+<<<<<<< HEAD
 import { clsx, type ClassValue } from "clsx"
+=======
+import { type ClassValue, clsx } from "clsx"
+>>>>>>> helper/main
 import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
+<<<<<<< HEAD
 
 // Funções de criptografia
 export const generateKeyPair = async (): Promise<CryptoKeyPair> => {
@@ -97,3 +102,5 @@ export const decryptLocation = async (
   const decoder = new TextDecoder();
   return JSON.parse(decoder.decode(decrypted));
 };
+=======
+>>>>>>> helper/main

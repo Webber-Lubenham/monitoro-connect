@@ -1,5 +1,13 @@
 import * as React from "react"
+<<<<<<< HEAD
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react"
+=======
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  DotsHorizontalIcon,
+} from "@radix-ui/react-icons"
+>>>>>>> helper/main
 
 import { cn } from "@/lib/utils"
 import { ButtonProps, buttonVariants } from "@/components/ui/button"
@@ -69,7 +77,11 @@ const PaginationPrevious = ({
     className={cn("gap-1 pl-2.5", className)}
     {...props}
   >
+<<<<<<< HEAD
     <ChevronLeft className="h-4 w-4" />
+=======
+    <ChevronLeftIcon className="h-4 w-4" />
+>>>>>>> helper/main
     <span>Previous</span>
   </PaginationLink>
 )
@@ -86,7 +98,11 @@ const PaginationNext = ({
     {...props}
   >
     <span>Next</span>
+<<<<<<< HEAD
     <ChevronRight className="h-4 w-4" />
+=======
+    <ChevronRightIcon className="h-4 w-4" />
+>>>>>>> helper/main
   </PaginationLink>
 )
 PaginationNext.displayName = "PaginationNext"
@@ -100,7 +116,11 @@ const PaginationEllipsis = ({
     className={cn("flex h-9 w-9 items-center justify-center", className)}
     {...props}
   >
+<<<<<<< HEAD
     <MoreHorizontal className="h-4 w-4" />
+=======
+    <DotsHorizontalIcon className="h-4 w-4" />
+>>>>>>> helper/main
     <span className="sr-only">More pages</span>
   </span>
 )
@@ -109,9 +129,17 @@ PaginationEllipsis.displayName = "PaginationEllipsis"
 export {
   Pagination,
   PaginationContent,
+<<<<<<< HEAD
   PaginationEllipsis,
   PaginationItem,
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
+=======
+  PaginationLink,
+  PaginationItem,
+  PaginationPrevious,
+  PaginationNext,
+  PaginationEllipsis,
+>>>>>>> helper/main
 }
