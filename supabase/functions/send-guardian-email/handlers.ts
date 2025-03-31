@@ -2,7 +2,8 @@
 // Main handler functions for processing guardian email requests
 
 import { Resend } from "npm:resend@2.0.0";
-import { corsHeaders, getResendClient, getVerifiedSender, generateMessageId } from "./utils.ts";
+import { getDynamicCorsHeaders } from "../_shared/cors.ts";
+import { getResendClient, getVerifiedSender, generateMessageId } from "./utils.ts";
 import { generateEmailContent, generateEmailSubject } from "./templates.ts";
 import { GuardianEmailRequest, EmailResponse } from "./types.ts";
 
@@ -10,6 +11,10 @@ import { GuardianEmailRequest, EmailResponse } from "./types.ts";
  * Main handler for email notification requests
  */
 export const handleGuardianEmail = async (req: Request): Promise<Response> => {
+  // Get appropriate CORS headers based on origin
+  const origin = req.headers.get('origin');
+  const corsHeaders = getDynamicCorsHeaders(origin);
+  
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders, status: 204 });
@@ -34,13 +39,13 @@ export const handleGuardianEmail = async (req: Request): Promise<Response> => {
         }), 
         { 
           status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          headers: corsHeaders
         }
       );
     }
     
     // Send the email
-    return await sendGuardianEmail(resend, requestBody.data);
+    return await sendGuardianEmail(resend, requestBody.data, corsHeaders);
     
   } catch (error) {
     console.error('Error in send-guardian-email function:', error);
@@ -52,7 +57,7 @@ export const handleGuardianEmail = async (req: Request): Promise<Response> => {
       }), 
       { 
         status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: corsHeaders
       }
     );
   }
@@ -65,6 +70,9 @@ async function parseAndValidateRequest(req: Request): Promise<
   { data: GuardianEmailRequest; } | 
   { errorResponse: Response; }
 > {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getDynamicCorsHeaders(origin);
+  
   try {
     const requestText = await req.text();
     console.log('Raw request body:', requestText);
@@ -78,7 +86,7 @@ async function parseAndValidateRequest(req: Request): Promise<
           }), 
           { 
             status: 400, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            headers: corsHeaders
           }
         )
       };
@@ -98,7 +106,7 @@ async function parseAndValidateRequest(req: Request): Promise<
           }), 
           { 
             status: 400, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            headers: corsHeaders
           }
         )
       };
@@ -113,7 +121,7 @@ async function parseAndValidateRequest(req: Request): Promise<
           }), 
           { 
             status: 400, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            headers: corsHeaders
           }
         )
       };
@@ -131,7 +139,7 @@ async function parseAndValidateRequest(req: Request): Promise<
         }), 
         { 
           status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          headers: corsHeaders
         }
       )
     };
@@ -143,7 +151,8 @@ async function parseAndValidateRequest(req: Request): Promise<
  */
 async function sendGuardianEmail(
   resend: Resend, 
-  requestData: GuardianEmailRequest
+  requestData: GuardianEmailRequest,
+  corsHeaders: Record<string, string>
 ): Promise<Response> {
   const { studentName, guardianEmail, guardianName, locationType = 'test', locationData } = requestData;
   
@@ -202,7 +211,7 @@ async function sendGuardianEmail(
         }), 
         { 
           status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          headers: corsHeaders
         }
       );
     }
@@ -220,7 +229,7 @@ async function sendGuardianEmail(
       }), 
       { 
         status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: corsHeaders
       }
     );
   } catch (emailError) {
@@ -233,7 +242,7 @@ async function sendGuardianEmail(
       }), 
       { 
         status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: corsHeaders
       }
     );
   }

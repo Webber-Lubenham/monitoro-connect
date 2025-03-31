@@ -1,34 +1,29 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { handleEmailRequest } from "./handlers/requestHandler.ts";
+import { getDynamicCorsHeaders } from "../_shared/cors.ts";
 
-// Updated CORS headers to include all necessary production domains
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-requested-with, origin',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
-  'Access-Control-Max-Age': '86400',
-  'Access-Control-Allow-Credentials': 'true'
-}
-
-// Handle the request with proper CORS support
+// Serve with proper CORS handling
 serve(async (req) => {
-  // Log request details for debugging
-  console.log('Request received:', {
-    method: req.method,
-    url: req.url,
-    origin: req.headers.get('origin')
-  });
-
+  // Get request details
+  const origin = req.headers.get('origin');
+  const method = req.method;
+  
+  // Log request for debugging
+  console.log('Request received in email-service:', method, req.url, origin);
+  
+  // Get appropriate CORS headers based on origin
+  const corsHeaders = getDynamicCorsHeaders(origin);
+  
   // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    console.log('Handling OPTIONS preflight request');
-    return new Response(null, {
+  if (method === 'OPTIONS') {
+    console.log('Handling OPTIONS preflight request from origin:', origin);
+    return new Response(null, { 
       status: 204,
-      headers: corsHeaders
+      headers: corsHeaders 
     });
   }
-
+  
   try {
     // Forward to the handler function
     const response = await handleEmailRequest(req);
@@ -49,7 +44,7 @@ serve(async (req) => {
       }),
       { 
         status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: corsHeaders
       }
     );
   }

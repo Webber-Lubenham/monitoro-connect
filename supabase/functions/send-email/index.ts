@@ -1,18 +1,25 @@
 
 import { serve } from 'https://deno.land/std@0.192.0/http/server.ts';
 import { handleEmailRequest } from './handler.ts';
-import { corsHeaders } from './cors.ts';
+import { getDynamicCorsHeaders } from '../_shared/cors.ts';
 
 // Updated serve implementation with better CORS handling
 serve(async (req) => {
-  console.log('Request received in send-email:', req.method, req.url, req.headers.get('origin'));
+  // Get request details
+  const origin = req.headers.get('origin');
+  const method = req.method;
+  
+  console.log('Request received in send-email:', method, req.url, origin);
+  
+  // Get appropriate CORS headers based on origin
+  const corsHeaders = getDynamicCorsHeaders(origin);
   
   // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    console.log('Handling OPTIONS preflight request');
+  if (method === 'OPTIONS') {
+    console.log('Handling OPTIONS preflight request from origin:', origin);
     return new Response(null, { 
       status: 204,
-      headers: corsHeaders 
+      headers: corsHeaders
     });
   }
   
@@ -35,7 +42,7 @@ serve(async (req) => {
       }),
       { 
         status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: corsHeaders
       }
     );
   }

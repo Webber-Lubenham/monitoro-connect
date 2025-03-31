@@ -1,40 +1,30 @@
 
 import { serve } from "https://deno.land/std@0.192.0/http/server.ts";
 import { handleGuardianEmail } from "./handlers.ts";
+import { getDynamicCorsHeaders } from "../_shared/cors.ts";
 
-// Updated CORS headers to include all necessary production domains
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, origin',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Max-Age': '86400',
-  'Access-Control-Allow-Credentials': 'true'
-};
-
-// Handle preflight requests for CORS
-const handleOptions = (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    console.log('Handling OPTIONS preflight request');
-    return new Response(null, {
+// Serve with proper CORS handling
+serve(async (req) => {
+  // Get request details
+  const origin = req.headers.get('origin');
+  const method = req.method;
+  
+  console.log('Guardian email request received:', method, req.url, origin);
+  
+  // Get appropriate CORS headers based on origin
+  const corsHeaders = getDynamicCorsHeaders(origin);
+  
+  // Handle CORS preflight requests
+  if (method === 'OPTIONS') {
+    console.log('Handling OPTIONS preflight request from origin:', origin);
+    return new Response(null, { 
       status: 204,
       headers: corsHeaders
     });
   }
-  return null;
-};
-
-// Serve with CORS handling
-serve(async (req) => {
-  console.log('Guardian email request received:', req.method, req.url, req.headers.get('origin'));
   
-  // Handle CORS preflight
-  const optionsResponse = handleOptions(req);
-  if (optionsResponse) {
-    return optionsResponse;
-  }
-  
-  // Handle the regular request
   try {
+    // Handle the regular request
     const response = await handleGuardianEmail(req);
     
     // Ensure all responses have CORS headers
@@ -53,7 +43,7 @@ serve(async (req) => {
       }),
       { 
         status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: corsHeaders
       }
     );
   }
