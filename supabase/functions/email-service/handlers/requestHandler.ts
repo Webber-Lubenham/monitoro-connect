@@ -14,24 +14,11 @@ const resend = new Resend(resendApiKey);
 export async function handleEmailRequest(req: Request): Promise<Response> {
   try {
     // Parse the request body
-    let body;
-    try {
-      body = await req.json() as EmailRequest;
-    } catch (e) {
-      console.error('Error parsing JSON request body:', e);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Invalid JSON in request body' 
-        }),
-        { status: 400 }
-      );
-    }
-    
+    const body = await req.json() as EmailRequest;
     console.log('Email service received request:', JSON.stringify(body));
 
     // Validate request structure
-    if (!body || !body.type || !body.data) {
+    if (!body.type || !body.data) {
       console.error('Invalid request format: missing type or data');
       return new Response(
         JSON.stringify({ 

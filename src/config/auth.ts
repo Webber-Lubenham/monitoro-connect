@@ -1,23 +1,46 @@
-
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient, AuthChangeEvent, Session } from '@supabase/supabase-js'
 
 // Hardcoded Supabase configuration values
-const supabaseUrl = 'https://sb1-yohd9adf.supabase.co'
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNiMS15b2hkOWFkZiIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzM0ODg5NDUzLCJleHAiOjIwNTA0NjU0NTN9.yp2f5iBM7cMjpjB0VUhPTuOe3rvhCNYWMIJ1z0_iEVo'
+const supabaseUrl = 'https://pqhxgsrbazjgzyrxhyjj.supabase.co'
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxaHhnc3JiYXpqZ3p5cnhoeWpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMyNjg4MzEsImV4cCI6MjA1ODg0NDgzMX0.EV6PyUfJRM3p8CFbWfXw0HCnY124PI-T6tQVDIe0DW0'
 
-// Enhanced Supabase client configuration
-export const supabase = createClient(supabaseUrl, supabaseKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    storage: localStorage,
-    storageKey: 'student-sentinel.auth.token'
+// Singleton pattern for Supabase client
+let supabaseInstance: SupabaseClient | null = null
+let isInitializing = false
+
+export const supabase = (): SupabaseClient => {
+  if (!supabaseInstance && !isInitializing) {
+    isInitializing = true
+    try {
+      supabaseInstance = createClient(supabaseUrl, supabaseKey, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          storage: localStorage,
+          storageKey: 'student-sentinel.auth.token',
+          detectSessionInUrl: false
+        }
+      })
+    } finally {
+      isInitializing = false
+    }
   }
-})
+  if (!supabaseInstance) {
+    throw new Error('Failed to initialize Supabase client')
+  }
+  return supabaseInstance
+}
 
 // Authentication state management
 export const initializeAuth = () => {
-  supabase.auth.onAuthStateChange((event, session) => {
+  const client = supabase()
+  
+  // Remove any existing listeners to prevent duplicates
+  client.auth.removeAllListeners()
+  
+  client.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
+    console.log('Auth state changed:', event, session?.user?.id)
+    
     if (event === 'SIGNED_OUT') {
       // Clean up auth data
       localStorage.removeItem('student-sentinel.auth.token')
@@ -25,19 +48,17 @@ export const initializeAuth = () => {
       localStorage.removeItem('student-sentinel.user.preferences')
     }
     
-    if (event === 'SIGNED_IN') {
+    if (event === 'SIGNED_IN' && session?.user?.id) {
       // Initialize user preferences
-      initializeUserPreferences(session?.user?.id)
+      initializeUserPreferences(session.user.id)
     }
   })
 }
 
 // User preferences management
-const initializeUserPreferences = async (userId: string | undefined) => {
-  if (!userId) return
-
+const initializeUserPreferences = async (userId: string) => {
   try {
-    const { data: preferences, error } = await supabase
+    const { data: preferences, error } = await supabase()
       .from('parent_notification_preferences')
       .select('*')
       .eq('user_id', userId)

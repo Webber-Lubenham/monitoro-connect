@@ -1,25 +1,29 @@
+import React, { useState } from "react";
 
-import { useState } from "react"
-import { Link } from "react-router-dom"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card"
-import { useAuth } from "@/contexts/AuthContext"
+import { Link } from "react-router-dom";
+import { Button } from "../components/ui/button"; 
+import { Input } from "../components/ui/input"; 
+import { Card, CardHeader, CardContent, CardFooter } from "../components/ui/card"; 
+import { useAuth } from "../contexts/AuthContext"; 
+
+
 
 export function LoginPage() {
-  const { signIn } = useAuth()
-  const [loading, setLoading] = useState(false)
+  const { signIn } = useAuth();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-  })
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    await signIn(formData.email, formData.password)
-    setLoading(false)
-  }
+const handleSubmit = async (e: React.FormEvent) => {
+
+
+    e.preventDefault();
+    setLoading(true);
+    await signIn(formData.email, formData.password);
+    setLoading(false);
+  };
 
   return (
     <Card>
@@ -53,5 +57,5 @@ export function LoginPage() {
         </CardFooter>
       </form>
     </Card>
-  )
+  );
 }

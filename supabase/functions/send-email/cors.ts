@@ -2,39 +2,7 @@
 // CORS headers for cross-origin requests
 export const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-application-name, origin',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-application-name',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Credentials': 'true',
-  'Access-Control-Max-Age': '86400',
-  'Vary': 'Origin'
-};
-
-// Get CORS headers based on the request origin
-export const getDynamicCorsHeaders = (origin: string | null) => {
-  // Allow localhost and production domains
-  const allowedOrigins = [
-    'http://localhost:8080',
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'https://student-sentinel-hub.lovable.app',
-    'https://sistema-monitore.com.br',
-    'https://monitoro-connect.lovable.app'
-  ];
-  
-  console.log(`Received origin for CORS: ${origin}`);
-  
-  // If the origin is in the allowed list, use it; otherwise, use the default
-  const requestOrigin = origin && allowedOrigins.includes(origin) ? origin : '*';
-  
-  console.log(`Using origin for CORS: ${requestOrigin}`);
-  
-  return {
-    'Access-Control-Allow-Origin': requestOrigin,
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-application-name, origin',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Credentials': 'true',
-    'Access-Control-Max-Age': '86400',
-    'Content-Type': 'application/json',
-    'Vary': 'Origin'
-  };
+  'Access-Control-Allow-Credentials': 'true'
 };
