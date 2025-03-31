@@ -1,0 +1,14 @@
+
+{
+  "imports": {
+    "resend": "npm:resend",
+    "@types/resend": "npm:@types/resend"
+  },
+  "nodeModulesDir": "auto",
+  "compilerOptions": {
+    "lib": ["deno.window", "esnext"]
+  },
+  "tasks": {
+    "dev": "deno run --allow-net --allow-env --allow-read server.ts"
+  }
+}

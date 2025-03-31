@@ -4,22 +4,21 @@
     "useDefineForClassFields": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
+    "moduleResolution": "node",
+    "strict": true,
     "skipLibCheck": true,
-    "noEmitOnError": false,
-
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
+    "esModuleInterop": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-
-    "strict": false,
+    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "types": ["node"],
+    "allowImportingTsExtensions": true
   },
-  "include": ["src", "supabase/auth.tsx", "supabase/supabase.ts"],
-  "exclude": ["src/tempobook"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
 }

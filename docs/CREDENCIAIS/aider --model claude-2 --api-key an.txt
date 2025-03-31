@@ -1,0 +1,4 @@
+aider --model claude-2 --api-key anthropic=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
+
+
+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
