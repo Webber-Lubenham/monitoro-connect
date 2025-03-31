@@ -1,87 +1,56 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { handleEmailRequest } from "./handlers/requestHandler.ts";
+
+// Updated CORS headers to include all necessary production domains
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-requested-with',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-requested-with, origin',
   'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
   'Access-Control-Max-Age': '86400',
   'Access-Control-Allow-Credentials': 'true'
 }
 
-const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
-
+// Handle the request with proper CORS support
 serve(async (req) => {
+  // Log request details for debugging
   console.log('Request received:', {
     method: req.method,
     url: req.url,
-    headers: Object.fromEntries(req.headers.entries()),
     origin: req.headers.get('origin')
-  })
+  });
 
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    console.log('Handling OPTIONS request with headers:', corsHeaders)
+    console.log('Handling OPTIONS preflight request');
     return new Response(null, {
       status: 204,
       headers: corsHeaders
-    })
+    });
   }
 
   try {
-    const body = await req.json()
-    console.log('Request body:', body)
-
-    if (!RESEND_API_KEY) {
-      throw new Error('RESEND_API_KEY não configurada')
-    }
-
-    const { studentName, studentEmail, guardianName, guardianEmail, latitude, longitude, timestamp } = body
-
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${RESEND_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        from: 'Sistema Monitore <noreply@sistemamonitore.com.br>',
-        to: guardianEmail,
-        subject: `Alerta de Localização - ${studentName}`,
-        html: `
-          <h2>Alerta de Localização</h2>
-          <p>Olá ${guardianName},</p>
-          <p>Recebemos uma atualização de localização para ${studentName}.</p>
-          <p><strong>Detalhes:</strong></p>
-          <ul>
-            <li>Data/Hora: ${new Date(timestamp).toLocaleString()}</li>
-            <li>Latitude: ${latitude}</li>
-            <li>Longitude: ${longitude}</li>
-          </ul>
-          <p>Você pode visualizar a localização no mapa através do aplicativo.</p>
-        `
-      })
-    })
-
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(`Erro ao enviar e-mail: ${error.message}`)
-    }
-
-    return new Response(JSON.stringify({ success: true }), {
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'application/json'
+    // Forward to the handler function
+    const response = await handleEmailRequest(req);
+    
+    // Ensure all responses have CORS headers
+    const headers = response.headers;
+    Object.entries(corsHeaders).forEach(([key, value]) => {
+      headers.set(key, value);
+    });
+    
+    return response;
+  } catch (error) {
+    console.error('Unhandled error in email-service:', error);
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: error instanceof Error ? error.message : String(error)
+      }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
-    })
-  } catch (error: unknown) {
-    console.error('Error processing request:', error)
-    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred'
-    return new Response(JSON.stringify({ error: errorMessage }), {
-      status: 500,
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'application/json'
-      }
-    })
+    );
   }
-})
+});
