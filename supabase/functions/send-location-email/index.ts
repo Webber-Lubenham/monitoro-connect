@@ -1,14 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { Resend } from 'npm:resend';
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
-
-// Configuração de CORS
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-application-name',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Content-Type': 'application/json'
-};
+import { getDynamicCorsHeaders } from "../_shared/cors.ts";
 
 // Get Resend API key from environment variable
 const resendApiKey = Deno.env.get('RESEND_API_KEY');
@@ -33,9 +26,20 @@ interface LocationEmailRequest {
 }
 
 const handler = async (req: Request) => {
+  // Get request details
+  const origin = req.headers.get('origin');
+  const method = req.method;
+  
+  // Get appropriate CORS headers based on origin
+  const corsHeaders = getDynamicCorsHeaders(origin);
+  
   // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders, status: 204 });
+  if (method === 'OPTIONS') {
+    console.log('Handling OPTIONS preflight request from origin:', origin);
+    return new Response(null, { 
+      status: 204,
+      headers: corsHeaders 
+    });
   }
 
   try {
