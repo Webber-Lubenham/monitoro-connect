@@ -1,97 +1,30 @@
-# Monitoro Connect
+# React + TypeScript + Vite
 
-Sistema de monitoramento e comunicação entre instituições de ensino, alunos e responsáveis.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## Tecnologias
+Currently, two official plugins are available:
 
-- React + TypeScript + Vite
-- Supabase
-- Mapbox
-- Shadcn/ui
-- TailwindCSS
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-## Configuração do Ambiente
+## Expanding the ESLint configuration
 
-1. Clone o repositório
-```bash
-git clone https://github.com/Webber-Lubenham/monitoro-connect.git
-cd monitoro-connect
+If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+
+- Configure the top-level `parserOptions` property like this:
+
+```js
+export default {
+  // other rules...
+  parserOptions: {
+    ecmaVersion: 'latest',
+    sourceType: 'module',
+    project: ['./tsconfig.json', './tsconfig.node.json'],
+    tsconfigRootDir: __dirname,
+  },
+}
 ```
 
-2. Instale as dependências
-```bash
-npm install
-```
-
-3. Configure as variáveis de ambiente
-```bash
-cp .env.example .env
-```
-Edite o arquivo `.env` com suas configurações
-
-4. Inicie o servidor de desenvolvimento
-```bash
-npm run dev
-```
-
-## Estrutura do Projeto
-
-```
-src/
-  ├── components/     # Componentes reutilizáveis
-  ├── contexts/       # Contextos React
-  ├── hooks/         # Hooks personalizados
-  ├── lib/           # Utilitários e configurações
-  ├── pages/         # Páginas da aplicação
-  ├── services/      # Serviços e integrações
-  └── types/         # Definições de tipos
-```
-
-## Funcionalidades
-
-- Autenticação e autorização
-- Gerenciamento de usuários
-- Sistema de notificações
-- Monitoramento em tempo real
-- Integração com mapas
-- Comunicação entre usuários
-
-## Desenvolvimento
-
-### Scripts Disponíveis
-
-- `npm run dev` - Inicia o servidor de desenvolvimento
-- `npm run build` - Compila o projeto para produção
-- `npm run preview` - Visualiza a versão de produção localmente
-- `npm run lint` - Executa o linter
-- `npm run types:supabase` - Atualiza os tipos do Supabase
-
-### Padrões de Código
-
-- Utilize TypeScript para todo código novo
-- Siga as convenções do ESLint
-- Mantenha os componentes pequenos e focados
-- Documente funções e componentes complexos
-
-## Contribuição
-
-1. Crie uma branch para sua feature
-```bash
-git checkout -b feature/nome-da-feature
-```
-
-2. Faça commit das suas alterações
-```bash
-git commit -m "feat: descrição da alteração"
-```
-
-3. Envie para o repositório
-```bash
-git push origin feature/nome-da-feature
-```
-
-4. Abra um Pull Request
-
-## Licença
-
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
+- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
+- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list

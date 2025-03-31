@@ -22,15 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-<<<<<<< HEAD
-.aider*
-.env
-.env
-.env
-.env
-.env
-.env
-=======
 
 !node_modules/.vite
 
@@ -40,4 +31,3 @@ dist-ssr
 core
 
 .github/
->>>>>>> helper/main

@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-import { useToast, toast } from "@/hooks/use-toast";
-
-export { useToast, toast };
-=======
 // Inspired by react-hot-toast library
 import * as React from "react"
 
@@ -195,4 +190,3 @@ function useToast() {
 }
 
 export { useToast, toast }
->>>>>>> helper/main
