@@ -96,6 +96,8 @@ export const sendFallbackNotificationDirectly = async (
       latitude,
       longitude,
       timestamp = new Date().toISOString(),
+      mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`,
+      isEmergency = false
     } = notificationData;
     
     // Format the body with the student's location information
@@ -151,6 +153,9 @@ export const sendFallbackNotification = async (
     // Get the current origin for CORS headers
     const origin = window.location.origin;
     
+    // Create map URL for the location
+    const mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+    
     // First try using the email-service function
     try {
       const fallbackResponse = await supabase.functions.invoke('email-service', {
@@ -196,7 +201,7 @@ export const sendFallbackNotification = async (
       console.error('Failed to call fallback edge function:', edgeFunctionError);
     }
     
-    // If edge function fails, try client-side fallback
+    // If edge function fails, try client-side fallback with all required properties
     return await sendFallbackNotificationDirectly({
       guardianEmail,
       guardianName,
@@ -204,7 +209,9 @@ export const sendFallbackNotification = async (
       studentEmail,
       latitude,
       longitude,
-      timestamp
+      timestamp,
+      mapUrl,
+      isEmergency: false
     });
   } catch (fallbackError) {
     console.error(`Fallback notification failed:`, fallbackError);

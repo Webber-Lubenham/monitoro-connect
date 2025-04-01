@@ -1,5 +1,6 @@
 
 import { toast } from '@/hooks/use-toast';
+import { createElement } from 'react';
 
 interface FallbackEmailOptions {
   to: string;
@@ -37,15 +38,17 @@ export const useFallbackNotification = () => {
       
       // If popup was blocked, provide feedback to the user
       if (!emailWindow) {
+        // Create a Button element that the toast can render
+        const ActionButton = () => createElement('button', {
+          className: 'bg-blue-500 text-white px-3 py-1 rounded',
+          onClick: () => window.location.href = mailtoLink
+        }, 'Enviar por Email');
+        
         toast({
           title: "Método alternativo de notificação disponível",
           description: "O envio automático falhou. Clique em 'Enviar por Email' para abrir seu aplicativo de email.",
           variant: "default",
-          // Use a function that returns JSX instead of directly including JSX in a .ts file
-          action: {
-            label: "Enviar por Email",
-            onClick: () => window.location.href = mailtoLink
-          }
+          action: createElement(ActionButton)
         });
       }
       
