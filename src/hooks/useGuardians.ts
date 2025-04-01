@@ -94,7 +94,7 @@ export const useGuardians = () => {
           // Call the Edge Function directly with the CORS header
           const response = await supabase.functions.invoke('send-location-email', {
             body: JSON.stringify({
-              studentName: profile.full_name || profile.email || 'Aluno',
+              studentName: profile.name || profile.email || 'Aluno', // Changed from full_name to name
               guardianEmail: guardian.email,
               guardianName: guardian.nome,
               latitude: location.latitude,

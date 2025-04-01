@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { GuardianForm as GuardianFormType } from '@/types/database.types';
 import { GuardianForm } from './GuardianForm';
-import { FormErrors } from '@/hooks/useGuardians';
+import { FormErrors } from '@/hooks/guardians/types'; // Fixed import path
 
 interface GuardianFormContainerProps {
   onSubmit: (guardian: GuardianFormType) => Promise<boolean>;
