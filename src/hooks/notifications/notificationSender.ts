@@ -30,7 +30,8 @@ export const sendEdgeFunctionNotification = async (
         },
         headers: {
           'Content-Type': 'application/json',
-          'Origin': origin
+          'Origin': origin,
+          'X-Client-Info': 'monitore-app/1.0.0'
         }
       });
       
@@ -84,6 +85,8 @@ export const sendFallbackNotificationDirectly = async (
   notificationData: NotificationPayload
 ): Promise<NotificationResult> => {
   try {
+    // Since useFallbackNotification is a hook, we need to create a function
+    // that doesn't require the hook to be used in the component context
     const { sendFallbackEmail } = useFallbackNotification();
     
     const {

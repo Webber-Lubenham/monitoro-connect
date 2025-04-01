@@ -27,7 +27,7 @@ export const useFallbackNotification = () => {
       const timestamp = new Date().toLocaleString('pt-BR');
       
       // Format message body with additional information
-      const emailBody = `${body}\n\nLocalização: https://www.google.com/maps?q=${latitude},${longitude}\nHorário: ${timestamp}`;
+      const emailBody = `${body}\n\nLocalização: ${mapUrl}\nHorário: ${timestamp}`;
       
       // Create a mailto link
       const mailtoLink = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
@@ -41,14 +41,11 @@ export const useFallbackNotification = () => {
           title: "Método alternativo de notificação disponível",
           description: "O envio automático falhou. Clique em 'Enviar por Email' para abrir seu aplicativo de email.",
           variant: "default",
-          action: (
-            <button 
-              className="bg-blue-500 text-white px-3 py-1 rounded"
-              onClick={() => window.location.href = mailtoLink}
-            >
-              Enviar por Email
-            </button>
-          )
+          // Use a function that returns JSX instead of directly including JSX in a .ts file
+          action: {
+            label: "Enviar por Email",
+            onClick: () => window.location.href = mailtoLink
+          }
         });
       }
       

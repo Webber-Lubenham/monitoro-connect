@@ -18,11 +18,12 @@ export const getDynamicCorsHeaders = (origin: string | null) => {
     'https://student-sentinel-hub.lovable.app',
     'https://sistema-monitore.com.br',
     'https://monitoro-connect.lovable.app',
-    'https://4629cb7d-b3ba-4d33-8157-8ad16626160e-00-2q62t3fp8p2fl.riker.replit.dev:5000',
     'https://4629cb7d-b3ba-4d33-8157-8ad16626160e-00-2q62t3fp8p2fl.riker.replit.dev',
+    'https://4629cb7d-b3ba-4d33-8157-8ad16626160e-00-2q62t3fp8p2fl.riker.replit.dev:5000',
     'https://replit.dev',
     'https://*.replit.dev',
-    'https://*.riker.replit.dev'
+    'https://*.riker.replit.dev',
+    'https://*.picard.replit.dev'
   ];
   
   // Check if the origin matches any of the patterns with wildcards
@@ -44,6 +45,8 @@ export const getDynamicCorsHeaders = (origin: string | null) => {
     'Vary': 'Origin'
   };
   
+  console.log('Checking origin against allowed origins:', origin);
+  
   // Check for exact matches first
   let allowOrigin = allowedOrigins.includes(origin) ? origin : null;
   
@@ -51,6 +54,7 @@ export const getDynamicCorsHeaders = (origin: string | null) => {
   if (!allowOrigin) {
     for (const pattern of allowedOrigins) {
       if (matchesWildcard(origin, pattern)) {
+        console.log('Origin matched wildcard pattern:', pattern);
         allowOrigin = origin;
         break;
       }
@@ -58,7 +62,10 @@ export const getDynamicCorsHeaders = (origin: string | null) => {
   }
   
   // If still no match, use '*'
-  if (!allowOrigin) allowOrigin = '*';
+  if (!allowOrigin) {
+    console.log('No match found, defaulting to *');
+    allowOrigin = '*';
+  }
   
   return {
     'Access-Control-Allow-Origin': allowOrigin,

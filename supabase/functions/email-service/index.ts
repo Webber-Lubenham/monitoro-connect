@@ -10,7 +10,7 @@ serve(async (req) => {
   const method = req.method;
   
   // Log request for debugging
-  console.log('Request received in email-service:', method, req.url, origin);
+  console.log('Request received in email-service:', method, req.url, 'Origin:', origin);
   
   // Get appropriate CORS headers based on origin
   const corsHeaders = getDynamicCorsHeaders(origin);
