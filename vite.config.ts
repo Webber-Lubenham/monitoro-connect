@@ -22,10 +22,11 @@ export default defineConfig(({ mode }) => ({
         'https://4629cb7d-b3ba-4d33-8157-8ad16626160e-00-2q62t3fp8p2fl.riker.replit.dev:5000', // Add Replit domain
         'https://*.replit.dev', // Add wildcard for all Replit domains
         'https://*.riker.replit.dev', // Add wildcard for all Riker Replit domains
+        'https://*.lovable.app', // Add wildcard for Lovable domains
         '*' // Allow all origins as a fallback
       ],
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Client-Info', 'Apikey', 'X-Application-Name', 'Origin'],
       credentials: true
     },
     allowedHosts: [
@@ -38,6 +39,7 @@ export default defineConfig(({ mode }) => ({
       'sistema-monitore.com.br',
       '*.replit.dev', // Add wildcard for all Replit domains
       '*.riker.replit.dev', // Add wildcard for all Riker Replit domains
+      '*.lovable.app', // Add wildcard for Lovable domains
       '*' // Allow all hosts as a fallback
     ],
   },

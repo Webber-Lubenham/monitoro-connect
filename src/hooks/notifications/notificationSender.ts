@@ -93,6 +93,7 @@ export const sendFallbackNotificationDirectly = async (
       guardianEmail,
       guardianName,
       studentName,
+      studentEmail,
       latitude,
       longitude,
       timestamp = new Date().toISOString(),
@@ -174,7 +175,8 @@ export const sendFallbackNotification = async (
         },
         headers: {
           'Content-Type': 'application/json',
-          'Origin': origin
+          'Origin': origin,
+          'X-Client-Info': 'monitore-app/1.0.0'
         }
       });
       

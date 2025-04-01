@@ -23,7 +23,9 @@ export const getDynamicCorsHeaders = (origin: string | null) => {
     'https://replit.dev',
     'https://*.replit.dev',
     'https://*.riker.replit.dev',
-    'https://*.picard.replit.dev'
+    'https://*.picard.replit.dev',
+    'https://*.lovable.app',
+    'https://*.lovableproject.com'
   ];
   
   // Check if the origin matches any of the patterns with wildcards

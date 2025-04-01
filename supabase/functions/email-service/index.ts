@@ -29,12 +29,17 @@ serve(async (req) => {
     const response = await handleEmailRequest(req);
     
     // Ensure all responses have CORS headers
-    const headers = response.headers;
-    for (const [key, value] of Object.entries(corsHeaders)) {
+    const headers = new Headers(response.headers);
+    Object.entries(corsHeaders).forEach(([key, value]) => {
       headers.set(key, value);
-    }
+    });
     
-    return response;
+    // Return response with CORS headers
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: headers
+    });
   } catch (error) {
     console.error('Unhandled error in email-service:', error);
     return new Response(
