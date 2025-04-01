@@ -30,9 +30,9 @@ serve(async (req) => {
     
     // Ensure all responses have CORS headers
     const headers = response.headers;
-    Object.entries(corsHeaders).forEach(([key, value]) => {
+    for (const [key, value] of Object.entries(corsHeaders)) {
       headers.set(key, value);
-    });
+    }
     
     return response;
   } catch (error) {

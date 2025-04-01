@@ -10,13 +10,25 @@ export const sendEdgeFunctionNotification = async (
   notificationData: NotificationPayload
 ): Promise<NotificationResult> => {
   try {
+    // Validate payload structure
+    if (!notificationData || typeof notificationData !== 'object') {
+      throw new Error('Invalid payload structure');
+    }
+
     console.log('Sending notification using email-service function:', notificationData);
+    
+    // Get the current origin for CORS headers
+    const origin = window.location.origin;
     
     // Call the consolidated email-service function
     const response = await supabase.functions.invoke('email-service', {
       body: {
         type: 'location-notification',
         data: notificationData
+      },
+      headers: {
+        'Content-Type': 'application/json',
+        'Origin': origin
       }
     });
     
@@ -81,6 +93,9 @@ export const sendFallbackNotification = async (
   try {
     console.log('Sending fallback notification using email-service function');
     
+    // Get the current origin for CORS headers
+    const origin = window.location.origin;
+    
     // Call the email-service function with fallback data
     const fallbackResponse = await supabase.functions.invoke('email-service', {
       body: {
@@ -95,6 +110,10 @@ export const sendFallbackNotification = async (
           timestamp,
           locationType: 'test'
         }
+      },
+      headers: {
+        'Content-Type': 'application/json',
+        'Origin': origin
       }
     });
     

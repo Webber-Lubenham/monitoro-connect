@@ -14,6 +14,13 @@ export interface Guardian {
   created_at: string;
 }
 
+export interface FormErrors {
+  nome?: string;
+  email?: string;
+  telefone?: string;
+  cpf?: string;
+}
+
 export const useGuardians = () => {
   const [guardians, setGuardians] = useState<Guardian[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,6 +90,9 @@ export const useGuardians = () => {
         return false;
       }
 
+      // Get current origin for CORS
+      const origin = window.location.origin;
+
       // Use the send-location-email function for more reliable delivery
       for (const guardian of guardians) {
         try {
@@ -105,7 +115,7 @@ export const useGuardians = () => {
             }),
             headers: {
               'Content-Type': 'application/json',
-              'Origin': window.location.origin
+              'Origin': origin
             }
           });
 

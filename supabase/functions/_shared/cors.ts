@@ -17,7 +17,9 @@ export const getDynamicCorsHeaders = (origin: string | null) => {
     'http://localhost:3000',
     'https://student-sentinel-hub.lovable.app',
     'https://sistema-monitore.com.br',
-    'https://monitoro-connect.lovable.app'
+    'https://monitoro-connect.lovable.app',
+    'https://4629cb7d-b3ba-4d33-8157-8ad16626160e-00-2q62t3fp8p2fl.riker.replit.dev:5000',
+    'https://4629cb7d-b3ba-4d33-8157-8ad16626160e-00-2q62t3fp8p2fl.riker.replit.dev'
   ];
   
   // If the origin is in the allowed list, use it; otherwise, use the default
