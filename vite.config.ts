@@ -16,7 +16,9 @@ export default defineConfig(({ mode }) => ({
         'https://gptengineer.app',
         'https://lovable.dev',
         'http://localhost:8080',
-        '*.lovableproject.com'
+        '*.lovableproject.com',
+        'https://monitoro-connect.lovable.app',
+        'https://sistema-monitore.com.br'
       ],
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
@@ -27,7 +29,9 @@ export default defineConfig(({ mode }) => ({
       'gptengineer.app', 
       'lovable.dev',
       '*.lovableproject.com',
-      'dafa1ef1-0d8f-4477-84d6-e6cfd55de1a0.lovableproject.com'
+      'dafa1ef1-0d8f-4477-84d6-e6cfd55de1a0.lovableproject.com',
+      'monitoro-connect.lovable.app',
+      'sistema-monitore.com.br'
     ],
   },
   plugins: [

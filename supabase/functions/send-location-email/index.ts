@@ -1,4 +1,3 @@
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { Resend } from 'npm:resend';
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
@@ -30,6 +29,8 @@ const handler = async (req: Request) => {
   // Get request details
   const origin = req.headers.get('origin');
   const method = req.method;
+  
+  console.log('Request received in send-location-email:', method, origin);
   
   // Get appropriate CORS headers based on origin
   const corsHeaders = getDynamicCorsHeaders(origin);
