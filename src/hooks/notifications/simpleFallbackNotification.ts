@@ -1,6 +1,7 @@
 
 import { NotificationPayload, NotificationResult } from './types';
 import { toast } from '@/components/ui/use-toast';
+import { Button } from '@/components/ui/button';
 
 /**
  * Provides a client-side fallback notification method when edge functions fail
@@ -49,12 +50,12 @@ export const showManualFallbackOption = (mailtoLink: string): void => {
     title: "Enviando notificação manualmente",
     description: "O sistema de notificação automático falhou. Clique em 'Enviar Email' para abrir o seu aplicativo de email.",
     action: (
-      <button 
+      <Button 
         className="bg-primary text-primary-foreground px-3 py-1 rounded hover:bg-primary/90 transition-colors"
         onClick={() => window.open(mailtoLink, '_blank')}
       >
         Enviar Email
-      </button>
+      </Button>
     ),
     duration: 10000, // Longer duration to give user time to act
   });
