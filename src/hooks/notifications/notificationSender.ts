@@ -29,9 +29,14 @@ export const sendEdgeFunctionNotification = async (
       timestamp: notificationData.timestamp || new Date().toISOString()
     };
     
-    // Try to call the consolidated email-service function
+    // Try to call the edge function
     try {
-      const response = await supabase.functions.invoke('email-service', {
+      // Check if we should use the newer email-service or the legacy function
+      const functionName = 'email-service';
+      
+      console.log(`Attempting to call edge function: ${functionName}`);
+      
+      const response = await supabase.functions.invoke(functionName, {
         body: {
           type: 'location-notification',
           data: completeNotificationData
@@ -43,26 +48,38 @@ export const sendEdgeFunctionNotification = async (
         }
       });
       
-      console.log('Response from email-service function:', response);
+      console.log(`Response from ${functionName} function:`, response);
       
       if (response.error) {
         console.error('Edge Function error:', response.error);
-        // Will try fallback below
+        
+        // Check if this is a "function not found" error
+        if (response.error.message?.includes('not found') || response.error.code === 'NOT_FOUND') {
+          console.log('Function not found, attempting to use notify-location function instead');
+          
+          // Try the legacy function as a backup
+          const legacyResponse = await supabase.functions.invoke('notify-location', {
+            body: completeNotificationData,
+            headers: {
+              'Content-Type': 'application/json',
+              'Origin': origin,
+              'X-Client-Info': 'monitore-app/1.0.0'
+            }
+          });
+          
+          if (legacyResponse.error) {
+            console.error('Legacy edge function also failed:', legacyResponse.error);
+            // Will try fallback below
+          } else if (legacyResponse.data?.success) {
+            // Success with legacy function
+            await logSuccessfulNotification(completeNotificationData);
+            return { success: true, message: 'Notification sent successfully via legacy function' };
+          }
+        }
+        // Will try fallback below for all other errors
       } else if (response.data?.success) {
         // Success case - log notification and return
-        await logNotification(
-          completeNotificationData.guardianEmail,
-          completeNotificationData.studentEmail,
-          'location',
-          { 
-            location: { 
-              lat: completeNotificationData.latitude, 
-              lng: completeNotificationData.longitude 
-            } 
-          },
-          'sent'
-        );
-        
+        await logSuccessfulNotification(completeNotificationData);
         return {
           success: true,
           message: 'Notification sent successfully'
@@ -83,6 +100,27 @@ export const sendEdgeFunctionNotification = async (
       success: false,
       error: errorMessage
     };
+  }
+};
+
+// Helper function to log successful notifications
+const logSuccessfulNotification = async (notificationData: NotificationPayload) => {
+  try {
+    await logNotification(
+      notificationData.guardianEmail,
+      notificationData.studentEmail,
+      'location',
+      { 
+        location: { 
+          lat: notificationData.latitude, 
+          lng: notificationData.longitude 
+        } 
+      },
+      'sent'
+    );
+  } catch (logError) {
+    console.error('Error logging notification:', logError);
+    // Don't let logging errors affect the success response
   }
 };
 
@@ -165,12 +203,27 @@ export const sendFallbackNotification = async (
     // Create map URL for the location
     const mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
     
-    // First try using the email-service function
-    try {
-      const fallbackResponse = await supabase.functions.invoke('email-service', {
-        body: {
-          type: 'guardian-notification',
-          data: {
+    // Try various functions in order of preference
+    const functionsToTry = ['email-service', 'notify-location', 'send-location-email'];
+    
+    for (const functionName of functionsToTry) {
+      console.log(`Attempting to use ${functionName} function for fallback notification`);
+      
+      try {
+        const fallbackResponse = await supabase.functions.invoke(functionName, {
+          body: functionName === 'email-service' ? {
+            type: 'guardian-notification',
+            data: {
+              guardianEmail,
+              guardianName,
+              studentName,
+              studentEmail,
+              latitude,
+              longitude,
+              timestamp,
+              locationType: 'test'
+            }
+          } : {
             guardianEmail,
             guardianName,
             studentName,
@@ -179,39 +232,45 @@ export const sendFallbackNotification = async (
             longitude,
             timestamp,
             locationType: 'test'
-          }
-        },
-        headers: {
-          'Content-Type': 'application/json',
-          'Origin': origin,
-          'X-Client-Info': 'monitore-app/1.0.0'
-        }
-      });
-      
-      console.log('Fallback notification response:', fallbackResponse);
-      
-      if (fallbackResponse.data?.success) {
-        // Log successful fallback notification
-        await logNotification(
-          guardianEmail,
-          studentEmail,
-          'location_fallback',
-          {
-            latitude,
-            longitude,
-            timestamp,
-            method: 'fallback'
           },
-          'sent'
-        );
+          headers: {
+            'Content-Type': 'application/json',
+            'Origin': origin,
+            'X-Client-Info': 'monitore-app/1.0.0'
+          }
+        });
         
-        return { success: true };
+        console.log(`${functionName} fallback notification response:`, fallbackResponse);
+        
+        if (!fallbackResponse.error && 
+            (fallbackResponse.data?.success || (fallbackResponse.status >= 200 && fallbackResponse.status < 300))) {
+          // Log successful fallback notification
+          await logNotification(
+            guardianEmail,
+            studentEmail,
+            'location_fallback',
+            {
+              latitude,
+              longitude,
+              timestamp,
+              method: 'fallback',
+              functionUsed: functionName
+            },
+            'sent'
+          );
+          
+          return { 
+            success: true, 
+            message: `Notification sent using ${functionName} function` 
+          };
+        }
+      } catch (functionError) {
+        console.error(`Error with ${functionName} function:`, functionError);
+        // Continue to the next function
       }
-    } catch (edgeFunctionError) {
-      console.error('Failed to call fallback edge function:', edgeFunctionError);
     }
     
-    // If edge function fails, try client-side fallback with all required properties
+    // If all edge functions fail, try client-side fallback
     return await sendFallbackNotificationDirectly({
       guardianEmail,
       guardianName,

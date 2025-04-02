@@ -73,6 +73,44 @@ This error occurs when your Supabase project has reached the maximum number of E
    supabase functions deploy email-service
    ```
 
+### Problem: "Function not found" Error
+
+**Error Message:**
+```
+{"code":"NOT_FOUND","message":"Requested function was not found"}
+```
+
+This error occurs when the Edge Function you're trying to call doesn't exist or hasn't been deployed correctly.
+
+**Solution:**
+
+1. **Check if the function exists:**
+   
+   Go to the Supabase dashboard to verify the function exists:
+   ```
+   https://supabase.com/dashboard/project/usnrnaxpoqmojxsfcoox/functions
+   ```
+
+2. **Deploy the function if missing:**
+   
+   If the function is missing, deploy it:
+   ```bash
+   supabase functions deploy email-service
+   ```
+
+3. **Use fallback functions:**
+   
+   The application is designed to try alternative functions if `email-service` is not found:
+   - `notify-location`
+   - `send-location-email`
+   
+   Make sure at least one of these functions is deployed.
+
+4. **Manual notification fallback:**
+   
+   As a last resort, the application will offer a manual email option to users,
+   opening their default email client with pre-filled guardian information.
+
 ## CORS Errors When Accessing Edge Functions
 
 **Symptoms:**
@@ -89,7 +127,8 @@ This error occurs when your Supabase project has reached the maximum number of E
    const allowedOrigins = [
      'http://localhost:8080', 
      'https://student-sentinel-hub.lovable.app',
-     'https://sistema-monitore.com.br'
+     'https://sistema-monitore.com.br',
+     'https://monitoro-connect.lovable.app'
    ];
    ```
 
