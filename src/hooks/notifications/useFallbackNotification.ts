@@ -1,63 +1,65 @@
 
-import { toast } from '@/hooks/use-toast';
-import { createElement } from 'react';
-
-interface FallbackEmailOptions {
-  to: string;
-  subject: string;
-  body: string;
-  studentName: string;
-  guardianName: string;
-  latitude: number;
-  longitude: number;
-}
+import { useState } from 'react';
+import { useToast } from '@/components/ui/use-toast';
+import { createFallbackEmailLink, showManualFallbackOption } from './simpleFallbackNotification';
 
 /**
- * Creates a URL for directly sending emails without relying on edge functions
- * This is a browser-based fallback when edge functions are not working
+ * Hook to provide fallback email notification capabilities
  */
 export const useFallbackNotification = () => {
-  const sendFallbackEmail = (options: FallbackEmailOptions) => {
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const sendFallbackEmail = (emailData: {
+    to: string;
+    subject: string;
+    body: string;
+    studentName: string;
+    guardianName: string;
+    latitude: number;
+    longitude: number;
+  }) => {
     try {
-      const { to, subject, body, latitude, longitude } = options;
+      setIsLoading(true);
       
-      // Create Google Maps link for the location
-      const mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+      // Create a mailto link for the fallback
+      const mailtoLink = `mailto:${encodeURIComponent(emailData.to)}?subject=${encodeURIComponent(emailData.subject)}&body=${encodeURIComponent(emailData.body)}`;
       
-      // Format timestamp
-      const timestamp = new Date().toLocaleString('pt-BR');
-      
-      // Format message body with additional information
-      const emailBody = `${body}\n\nLocalização: ${mapUrl}\nHorário: ${timestamp}`;
-      
-      // Create a mailto link
-      const mailtoLink = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
-      
-      // Open the default email client
+      // Try to open email client
       const emailWindow = window.open(mailtoLink, '_blank');
       
-      // If popup was blocked, provide feedback to the user
+      // If popup blocked or failed, show manual option
       if (!emailWindow) {
-        // Create a Button element that the toast can render
-        const ActionButton = () => createElement('button', {
-          className: 'bg-blue-500 text-white px-3 py-1 rounded',
-          onClick: () => window.location.href = mailtoLink
-        }, 'Enviar por Email');
+        // Create a notification payload
+        const payload = {
+          guardianEmail: emailData.to,
+          studentName: emailData.studentName,
+          latitude: emailData.latitude,
+          longitude: emailData.longitude
+        };
         
-        toast({
-          title: "Método alternativo de notificação disponível",
-          description: "O envio automático falhou. Clique em 'Enviar por Email' para abrir seu aplicativo de email.",
-          variant: "default",
-          action: createElement(ActionButton)
-        });
+        // Show fallback option using the shared function
+        showManualFallbackOption(createFallbackEmailLink(payload));
       }
       
+      setIsLoading(false);
       return true;
     } catch (error) {
-      console.error('Error creating fallback email:', error);
+      console.error('Error in fallback email:', error);
+      toast({
+        title: "Falha ao iniciar email",
+        description: "Não foi possível abrir seu aplicativo de email. Tente novamente.",
+        variant: "destructive"
+      });
+      setIsLoading(false);
       return false;
     }
   };
 
-  return { sendFallbackEmail };
+  return {
+    sendFallbackEmail,
+    isLoading
+  };
 };
+
+export default useFallbackNotification;
