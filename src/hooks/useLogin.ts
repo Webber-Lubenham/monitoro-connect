@@ -56,23 +56,7 @@ export const useLogin = () => {
       // Log pre-authentication state
       console.log('Starting authentication process');
       
-      // Check if the user exists in profiles table
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('email, role')
-        .eq('email', normalizedEmail)
-        .maybeSingle();
-      
-      if (debugMode) {
-        setDebugInfo((prev: DebugInfo | null) => ({ ...prev ?? {}, profileCheck: { data: profileData, error: profileError } }));
-      }
-
-      if (profileError) {
-        console.error('Error checking if user exists:', profileError);
-      }
-      
-      // Try to sign in regardless if we found the user or not
-      // (We don't want to reveal if an email exists for security reasons)
+      // Directly attempt authentication without checking profiles table first
       const { data, error } = await supabase.auth.signInWithPassword({
         email: normalizedEmail,
         password,
@@ -96,20 +80,11 @@ export const useLogin = () => {
             description: "Por favor, verifique seu email e clique no link de confirmação antes de fazer login.",
           });
         } else if (error.message.includes("Invalid login credentials")) {
-          // Check if user exists but credentials are wrong
-          if (profileData) {
-            toast({
-              variant: "destructive",
-              title: "Credenciais inválidas",
-              description: "A senha informada está incorreta. Por favor, verifique e tente novamente.",
-            });
-          } else {
-            toast({
-              variant: "destructive",
-              title: "Credenciais inválidas",
-              description: "Email ou senha incorretos. Verifique suas informações e tente novamente.",
-            });
-          }
+          toast({
+            variant: "destructive",
+            title: "Credenciais inválidas",
+            description: "Email ou senha incorretos. Verifique suas informações e tente novamente.",
+          });
         } else {
           toast({
             variant: "destructive",
