@@ -21,12 +21,20 @@ export const sendEdgeFunctionNotification = async (
     // Get the current origin for CORS headers
     const origin = window.location.origin;
     
+    // Make sure we have all required properties
+    const completeNotificationData = {
+      ...notificationData,
+      mapUrl: notificationData.mapUrl || `https://www.google.com/maps?q=${notificationData.latitude},${notificationData.longitude}`,
+      isEmergency: notificationData.isEmergency !== undefined ? notificationData.isEmergency : false,
+      timestamp: notificationData.timestamp || new Date().toISOString()
+    };
+    
     // Try to call the consolidated email-service function
     try {
       const response = await supabase.functions.invoke('email-service', {
         body: {
           type: 'location-notification',
-          data: notificationData
+          data: completeNotificationData
         },
         headers: {
           'Content-Type': 'application/json',
@@ -43,13 +51,13 @@ export const sendEdgeFunctionNotification = async (
       } else if (response.data?.success) {
         // Success case - log notification and return
         await logNotification(
-          notificationData.guardianEmail,
-          notificationData.studentEmail,
+          completeNotificationData.guardianEmail,
+          completeNotificationData.studentEmail,
           'location',
           { 
             location: { 
-              lat: notificationData.latitude, 
-              lng: notificationData.longitude 
+              lat: completeNotificationData.latitude, 
+              lng: completeNotificationData.longitude 
             } 
           },
           'sent'
@@ -66,7 +74,7 @@ export const sendEdgeFunctionNotification = async (
     }
     
     // If we get here, the edge function call failed - try direct fallback
-    return await sendFallbackNotificationDirectly(notificationData);
+    return await sendFallbackNotificationDirectly(completeNotificationData);
     
   } catch (error) {
     console.error('Error sending notification:', error);
