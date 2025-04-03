@@ -50,7 +50,7 @@ export const showManualFallbackOption = (
       <ToastAction altText="Enviar email manualmente" onClick={() => window.open(mailtoLink, "_blank")}>
         Enviar email manualmente
       </ToastAction>
-    ),
+    )
   });
 };
 
@@ -71,6 +71,6 @@ export const showSuccessNotification = (
       <ToastAction altText="OK" onClick={() => {}}>
         OK
       </ToastAction>
-    ),
+    )
   });
 };

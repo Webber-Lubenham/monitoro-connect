@@ -57,6 +57,55 @@ export const checkGuardianCpfExists = async (studentId: string, cpf: string): Pr
 };
 
 /**
+ * Check if a guardian with the specified email already exists
+ * This function is used by other services and exported with a different name
+ */
+export const checkExistingGuardianByEmail = async (studentId: string, email: string): Promise<boolean> => {
+  return checkGuardianEmailExists(studentId, email);
+};
+
+/**
+ * Check if a guardian with the specified CPF already exists 
+ * This function is used by other services and exported with a different name
+ */
+export const checkExistingGuardianByCpf = async (studentId: string, cpf: string): Promise<boolean> => {
+  return checkGuardianCpfExists(studentId, cpf);
+};
+
+/**
+ * Check if a student exists and return some basic info
+ */
+export const verifyStudentExists = async (studentId: string) => {
+  try {
+    const { data, error } = await dbClient
+      .from('profiles')
+      .select('first_name, last_name, email')
+      .eq('id', studentId)
+      .single();
+    
+    if (error) {
+      console.error('Error checking if student exists:', error);
+      return { exists: false, studentData: null };
+    }
+    
+    // Create a name from first_name and last_name, fallback to 'Aluno'
+    const name = `${data.first_name || ''} ${data.last_name || ''}`.trim() || 'Aluno';
+    
+    return {
+      exists: true,
+      studentData: {
+        id: studentId,
+        name,
+        email: data.email || ''
+      }
+    };
+  } catch (error) {
+    console.error('Exception checking if student exists:', error);
+    return { exists: false, studentData: null };
+  }
+};
+
+/**
  * Get a student's details for displaying in guardian-related UIs
  */
 export const getStudentDetailsForGuardians = async (studentId: string) => {
