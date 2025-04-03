@@ -33,14 +33,9 @@ export const showLocalFallbackNotification = ({
       variant,
       icon: <MessageCircle className="h-4 w-4" />,
       action: action
-        ? React.createElement(
-            ToastAction,
-            {
-              altText: action.label,
-              onClick: action.onClick,
-            },
-            action.label
-          )
+        ? <ToastAction altText={action.label} onClick={action.onClick}>
+            {action.label}
+          </ToastAction>
         : undefined,
     });
 
@@ -56,4 +51,38 @@ export const showLocalFallbackNotification = ({
       console.warn(`[NOTIFICATION] ${title}: ${description}`);
     }
   }
+};
+
+// Helper function to create a fallback email link with location data
+export const createFallbackEmailLink = (payload: {
+  guardianEmail: string;
+  studentName: string;
+  latitude: number;
+  longitude: number;
+}): string => {
+  const subject = encodeURIComponent(`Localização de ${payload.studentName}`);
+  const body = encodeURIComponent(
+    `Olá,\n\nEstou compartilhando minha localização com você:\n\n` +
+    `Latitude: ${payload.latitude}\n` +
+    `Longitude: ${payload.longitude}\n\n` +
+    `Veja no mapa: https://www.google.com/maps?q=${payload.latitude},${payload.longitude}\n\n` +
+    `Esta mensagem foi enviada automaticamente pelo Sistema Monitore.`
+  );
+  
+  return `mailto:${payload.guardianEmail}?subject=${subject}&body=${body}`;
+};
+
+// Shows a manual option for sending fallback notification
+export const showManualFallbackOption = (mailtoLink: string) => {
+  showLocalFallbackNotification({
+    title: 'Notificação direta falhou',
+    description: 'Não foi possível enviar notificação automática. Clique para enviar manualmente.',
+    variant: 'destructive',
+    action: {
+      label: 'Enviar Email',
+      onClick: () => {
+        window.open(mailtoLink, '_blank');
+      }
+    }
+  });
 };
