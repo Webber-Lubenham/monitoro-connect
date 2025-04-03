@@ -1,5 +1,5 @@
 
-import { useAuth } from "../providers/AuthProvider"; // Updated import path
+import { useAuth } from "../providers/AuthProvider";
 import { Card, CardHeader, CardContent } from "../components/ui/card";
 
 export function ProfilePage() {

@@ -1,37 +1,20 @@
 
-import { NotificationPosition } from './types';
+import { supabase } from '@/integrations/supabase/client';
 
 /**
- * Create a Promise wrapper for the geolocation API
+ * Promise wrapper for the Geolocation API
+ * @returns Promise that resolves with a Position object
  */
 export const getLocationPromise = (): Promise<GeolocationPosition> => {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
-      reject(new Error('Geolocation não é suportada neste navegador.'));
+      reject(new Error('Geolocation is not supported by your browser'));
       return;
     }
-
+    
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        resolve(position);
-      },
-      (error) => {
-        let errorMessage = 'Erro desconhecido ao obter localização.';
-        
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage = 'Acesso à localização foi negado pelo usuário.';
-            break;
-          case error.POSITION_UNAVAILABLE:
-            errorMessage = 'Informação de localização indisponível.';
-            break;
-          case error.TIMEOUT:
-            errorMessage = 'Tempo limite excedido ao obter localização.';
-            break;
-        }
-        
-        reject(new Error(errorMessage));
-      },
+      (position) => resolve(position),
+      (error) => reject(new Error(`Error getting location: ${error.message}`)),
       { 
         enableHighAccuracy: true, 
         timeout: 10000, 
@@ -42,28 +25,44 @@ export const getLocationPromise = (): Promise<GeolocationPosition> => {
 };
 
 /**
- * Format location info for display
+ * Formats location into a human-readable string
  */
 export const formatLocationInfo = (latitude: number, longitude: number): string => {
-  return `Latitude: ${latitude.toFixed(6)}, Longitude: ${longitude.toFixed(6)}`;
+  const latDirection = latitude >= 0 ? 'N' : 'S';
+  const lonDirection = longitude >= 0 ? 'E' : 'W';
+  
+  const latDeg = Math.abs(latitude).toFixed(6);
+  const lonDeg = Math.abs(longitude).toFixed(6);
+  
+  return `${latDeg}° ${latDirection}, ${lonDeg}° ${lonDirection}`;
 };
 
 /**
- * Check if the current location has high accuracy
+ * Gets a user's display name from their profile
  */
-export const hasHighAccuracy = (accuracy: number): boolean => {
-  // Consider high accuracy anything below 50 meters
-  return accuracy < 50;
-};
-
-/**
- * Convert a GeolocationPosition to NotificationPosition
- */
-export const positionToNotificationPosition = (position: GeolocationPosition): NotificationPosition => {
-  return {
-    latitude: position.coords.latitude,
-    longitude: position.coords.longitude,
-    accuracy: position.coords.accuracy,
-    timestamp: new Date(position.timestamp).toISOString()
-  };
+export const getUserDisplayName = async (userId: string): Promise<string> => {
+  try {
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('first_name, last_name')
+      .eq('id', userId)
+      .single();
+    
+    if (error || !profile) {
+      console.error('Error getting user profile:', error);
+      return 'Unknown User';
+    }
+    
+    const firstName = profile.first_name || '';
+    const lastName = profile.last_name || '';
+    
+    if (firstName || lastName) {
+      return `${firstName} ${lastName}`.trim();
+    }
+    
+    return 'Unknown User';
+  } catch (error) {
+    console.error('Exception getting user display name:', error);
+    return 'Unknown User';
+  }
 };
