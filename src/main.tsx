@@ -8,8 +8,11 @@ import './index.css';
 
 // Initialize Supabase auth listener
 supabase.auth.onAuthStateChange((event, session) => {
+  console.log('Auth state changed:', event, session?.user?.id);
+  
   if (event === 'SIGNED_OUT') {
-    localStorage.clear(); // Clear all storage on sign out
+    // Clear all storage on sign out for clean state
+    localStorage.clear();
   }
 });
 
