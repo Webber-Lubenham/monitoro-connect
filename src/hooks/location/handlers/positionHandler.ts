@@ -1,7 +1,7 @@
 
 import { GeolocationPosition } from "../locationTypes";
 import { positionToLocation } from "../locationUtils";
-import { updateLocationInDatabase } from "../locationDatabaseService";
+import { saveCurrentLocation } from "../locationDatabaseService";
 
 export const handleLocationPosition = (
   position: GeolocationPosition,
@@ -43,15 +43,15 @@ export const handleLocationPosition = (
       // Print more verbose information about the update
       console.log(`Updating location in database for user ${localStorage.getItem('userId')}: ${JSON.stringify(newLocation)}`);
       
-      updateLocationInDatabase(newLocation, position.coords.accuracy)
-        .then((response) => {
-          if (response.success) {
+      saveCurrentLocation()
+        .then((success) => {
+          if (success) {
             onUpdateLastSent(new Date());
-          } else if (response.error) {
-            console.error('Error updating location in database:', response.error);
+          } else {
+            console.error('Error updating location in database');
           }
         })
-        .catch(err => {
+        .catch((err) => {
           console.error('Exception updating location in database:', err);
         });
     }

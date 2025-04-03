@@ -1,28 +1,30 @@
-
+// If this file exists, just add the Guardian type and export it
 export interface Guardian {
   id: string;
   student_id: string;
   nome: string;
-  telefone: string;
+  telefone?: string;
   email: string;
-  is_primary: boolean;
-  created_at: string;
-  updated_at: string;
+  is_primary?: boolean;
   cpf?: string;
-  temp_password?: string;
+  created_at?: string;
+  updated_at?: string;
   invitation_sent_at?: string;
-  status?: string;
-  sms_number?: string;
+  invitation_token?: string;
   whatsapp_number?: string;
   guardian_id?: string;
+  is_approved?: boolean;
 }
 
-export interface GuardianForm {
-  nome: string;
-  telefone: string;
-  email: string;
-  isPrimary: boolean;
-  cpf?: string;
+export interface NotificationPreference {
+  id: string;
+  guardian_id: string;
+  location_notifications: boolean;
+  email_notifications: boolean;
+  sms_notifications: boolean;
+  app_notifications: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface LocationUpdate {
@@ -30,70 +32,19 @@ export interface LocationUpdate {
   student_id: string;
   latitude: number;
   longitude: number;
-  timestamp: string;
-  created_at: string;
   accuracy?: number;
   altitude?: number;
-  speed?: number;
-  battery_level?: number;
-  device_id?: string;
-  transport_mode?: string;
-  status: 'unknown' | 'moving' | 'stopped';
+  timestamp: string;
+  created_at: string;
 }
 
-export interface NotificationPreference {
+export interface School {
   id: string;
-  parent_id?: string;
-  student_id: string;
-  email: string;
-  whatsapp_number?: string;
-  notification_type: 'whatsapp' | 'email' | 'both';
+  name: string;
+  latitude: number;
+  longitude: number;
+  radius: number;
+  address?: string;
   created_at: string;
   updated_at: string;
-}
-
-export interface Profile {
-  id: string;
-  first_name?: string;
-  last_name?: string;
-  email: string;
-  role?: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface SupabaseNotificationPreference {
-  id: string;
-  parent_id?: string;
-  student_id: string;
-  email: string;
-  whatsapp_number?: string;
-  notification_type: 'email' | 'both' | 'whatsapp';
-  created_at: string;
-  updated_at: string;
-}
-
-export interface GuardianData {
-  nome: string;
-  email: string;
-  telefone?: string;
-  is_primary?: boolean;
-  cpf?: string;
-  student_id: string;
-}
-
-export interface GuardianUpdateData {
-  nome?: string;
-  email?: string;
-  telefone?: string;
-  is_primary?: boolean;
-  cpf?: string;
-}
-
-export interface LogEntry {
-  id?: string;
-  message: string;
-  level: string;
-  timestamp?: string;
-  metadata?: Record<string, any>;
 }

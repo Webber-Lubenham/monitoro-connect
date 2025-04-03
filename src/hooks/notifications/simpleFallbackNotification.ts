@@ -1,90 +1,77 @@
 
-import { toast } from "@/hooks/use-toast";
-import { ReactNode } from "react";
-import { ToastActionElement } from "@/hooks/use-toast";
-
-interface FallbackNotificationOptions {
-  fallbackTitle?: string;
-  fallbackMessage?: string;
-  retryAction?: () => void;
-}
+import { toast } from "@/components/ui/use-toast";
+import { ToastAction } from "@/components/ui/toast";
+import React from "react";
 
 /**
- * A simple fallback notification that can be used when other more specific
- * notifications have failed.
+ * Creates a fallback link for manual email notification
+ * @param studentName The name of the student
+ * @param guardianEmail The email of the guardian
+ * @param latitude The latitude of the student's location
+ * @param longitude The longitude of the student's location
+ * @returns A mailto link with the guardian's email and location details
  */
-export const showFallbackNotification = (
-  error: unknown,
-  options?: FallbackNotificationOptions
+export const createFallbackEmailLink = (
+  studentName: string,
+  guardianEmail: string,
+  latitude: number,
+  longitude: number
+): string => {
+  const subject = `Localização atual de ${studentName}`;
+  const mapLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
+  const body = `Olá,\n\nO aluno ${studentName} compartilhou sua localização atual com você.\n\nVer no mapa: ${mapLink}\n\nCoordenadas: ${latitude}, ${longitude}\n\nEste email foi enviado automaticamente pelo sistema de localização.`;
+
+  return `mailto:${guardianEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+};
+
+/**
+ * Shows a toast notification with a manual fallback option when automated notification fails
+ * @param guardianEmail Email address of the guardian
+ * @param guardianName Name of the guardian
+ * @param studentName Name of the student
+ * @param latitude Current latitude
+ * @param longitude Current longitude
+ */
+export const showManualFallbackOption = (
+  guardianEmail: string,
+  guardianName: string,
+  studentName: string,
+  latitude: number,
+  longitude: number
 ): void => {
-  const errorMessage = error instanceof Error ? error.message : String(error);
-  
-  // Default titles and messages if not provided
-  const fallbackTitle = options?.fallbackTitle || "Something went wrong";
-  const fallbackMessage = options?.fallbackMessage || "We couldn't complete your request. Please try again later.";
-  
-  let action: ToastActionElement | undefined = undefined;
-  
-  // If a retry action is provided, create a retry button
-  if (options?.retryAction) {
-    // Create a React element instead of a plain object
-    action = {
-      altText: "Try again",
-      onClick: options.retryAction,
-      children: "Try again"
-    } as ToastActionElement;
-  }
-  
-  // Show the toast notification
+  const mailtoLink = createFallbackEmailLink(studentName, guardianEmail, latitude, longitude);
+
   toast({
-    title: fallbackTitle,
-    description: `${fallbackMessage} (${errorMessage})`,
+    title: "Falha ao enviar notificação",
+    description: `Não foi possível enviar a notificação automaticamente para ${guardianName}. Você pode enviar manualmente clicando no botão abaixo.`,
     variant: "destructive",
-    action
+    duration: 10000,
+    action: (
+      <ToastAction altText="Enviar email manualmente" onClick={() => window.open(mailtoLink, "_blank")}>
+        Enviar email manualmente
+      </ToastAction>
+    ) as React.ReactElement,
   });
 };
 
 /**
- * Creates a fallback email link for notifications
+ * Shows a toast notification when a notification has been sent successfully
+ * @param guardianEmail Email address of the guardian that was notified
+ * @param guardianName Name of the guardian
  */
-export const createFallbackEmailLink = (payload: {
-  guardianEmail: string;
-  studentName: string;
-  latitude: number;
-  longitude: number;
-}): string => {
-  const { guardianEmail, studentName, latitude, longitude } = payload;
-  
-  // Create Google Maps link
-  const mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
-  
-  // Create email subject and body
-  const subject = `Location update from ${studentName}`;
-  const body = `
-${studentName} has shared their current location with you.
-
-Current location: ${latitude}, ${longitude}
-
-View on map: ${mapUrl}
-
-This email was sent as a fallback notification from the Monitore application.
-`;
-
-  // Create mailto link
-  return `mailto:${encodeURIComponent(guardianEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-};
-
-/**
- * Shows a manual fallback option when automated notification fails
- */
-export const showManualFallbackOption = (mailtoLink: string): void => {
+export const showSuccessNotification = (
+  guardianEmail: string,
+  guardianName: string
+): void => {
   toast({
-    title: "Manual notification required",
-    description: "Couldn't send automated notification. Please click the button below to send via your email client.",
-    action: {
-      altText: "Send Email",
-      onClick: () => window.open(mailtoLink, '_blank'),
-      children: "Send Email"
-    } as ToastActionElement
+    title: "Notificação enviada com sucesso",
+    description: `${guardianName} (${guardianEmail}) foi notificado sobre sua localização atual.`,
+    duration: 5000,
+    action: (
+      <ToastAction altText="OK" onClick={() => {}}>
+        OK
+      </ToastAction>
+    ) as React.ReactElement,
   });
 };
+
