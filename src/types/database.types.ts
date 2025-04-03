@@ -37,7 +37,7 @@ export interface Profile {
   updated_at?: string;
 }
 
-// Update NotificationPreference to match the schema
+// Update NotificationPreference to match the schema - combined both versions
 export interface NotificationPreference {
   id: string;
   guardian_id: string;
@@ -49,10 +49,10 @@ export interface NotificationPreference {
   updated_at: string;
   
   // Added these properties to fix type errors in NotificationPreferences.tsx
-  student_id?: string;
-  email?: string;
+  student_id: string;
+  email: string;
   whatsapp_number?: string;
-  notification_type?: string;
+  notification_type: string;
 }
 
 // Add LogEntry interface

@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { safeQuery } from "@/integrations/supabase/safeQueryBuilder";
 import { NotificationPreference } from "@/types/database.types";
 
+// Interface to match the Supabase table structure
 interface SupabaseNotificationPreference {
   id: string;
   notification_type: 'whatsapp' | 'email' | 'both' | null;
@@ -51,12 +52,17 @@ const NotificationPreferences = () => {
       // Convert from Supabase response type to our app type, ensuring null values are handled
       const processedPrefs: NotificationPreference[] = (prefsData || []).map((pref: any) => ({
         id: pref.id,
-        notification_type: pref.notification_type || 'email', // Default to 'email' if null
-        whatsapp_number: pref.whatsapp_number || '',
-        email: pref.email,
+        guardian_id: user.id,
         student_id: pref.student_id,
+        email: pref.email || '',
+        notification_type: pref.notification_type || 'email',
+        whatsapp_number: pref.whatsapp_number || '',
         created_at: pref.created_at || '',
-        updated_at: pref.updated_at || ''
+        updated_at: pref.updated_at || '',
+        location_notifications: true,
+        email_notifications: true,
+        sms_notifications: true,
+        app_notifications: true
       }));
       
       setPreferences(processedPrefs);
@@ -72,7 +78,7 @@ const NotificationPreferences = () => {
     }
   };
 
-  const updatePreference = async (studentId: string, data: Partial<Omit<NotificationPreference, 'id' | 'student_id'>>) => {
+  const updatePreference = async (studentId: string, data: Partial<Omit<SupabaseNotificationPreference, 'id' | 'student_id'>>) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');

@@ -1,6 +1,7 @@
 
 import { dbClient } from '../../base/baseService';
 import { asType } from '@/integrations/supabase/supabaseClient';
+import { Profile } from '@/types/database.types';
 
 /**
  * Check if a guardian email already exists for a student
@@ -88,15 +89,18 @@ export const verifyStudentExists = async (studentId: string) => {
       return { exists: false, studentData: null };
     }
     
+    // Ensure we have the correct data type
+    const profileData = data as Profile;
+    
     // Create a name from first_name and last_name, fallback to 'Aluno'
-    const name = `${data.first_name || ''} ${data.last_name || ''}`.trim() || 'Aluno';
+    const name = `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim() || 'Aluno';
     
     return {
       exists: true,
       studentData: {
         id: studentId,
         name,
-        email: data.email || ''
+        email: profileData.email || ''
       }
     };
   } catch (error) {
@@ -125,13 +129,16 @@ export const getStudentDetailsForGuardians = async (studentId: string) => {
       };
     }
     
+    // Ensure we have the correct data type
+    const profileData = data as Profile;
+    
     // Create a name from first_name and last_name, fallback to 'Aluno'
-    const name = `${data.first_name || ''} ${data.last_name || ''}`.trim() || 'Aluno';
+    const name = `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim() || 'Aluno';
     
     return {
       id: studentId,
       name,
-      email: data.email || ''
+      email: profileData.email || ''
     };
   } catch (error) {
     console.error('Exception getting student details:', error);

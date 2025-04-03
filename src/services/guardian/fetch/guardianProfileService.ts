@@ -1,50 +1,49 @@
 
-import { logOperation } from '../../base/baseService';
-import { dbClient } from '../../base/baseService';
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import { Profile } from "@/types/database.types";
 
 /**
- * Get student name by ID
+ * Get details about a student by id
  */
-export const getStudentName = async (studentId: string): Promise<string> => {
+export const getStudentProfile = async (studentId: string): Promise<{
+  name: string;
+  email: string;
+  id: string;
+} | null> => {
   try {
-    logOperation(`Fetching student name for ID: ${studentId}`);
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("first_name, last_name, email")
+      .eq("id", studentId)
+      .single();
     
-    // Try profiles table first
-    const profileResponse = await dbClient
-      .from('profiles')
-      .select('first_name, last_name, email')
-      .eq('id', studentId)
-      .maybeSingle();
-    
-    if (!profileResponse.error && profileResponse.data) {
-      // Try to build name from first and last name
-      if (profileResponse.data.first_name || profileResponse.data.last_name) {
-        const name = `${profileResponse.data.first_name || ''} ${profileResponse.data.last_name || ''}`.trim();
-        if (name) {
-          logOperation(`Found student name in profiles: ${name}`);
-          return name;
-        }
-      }
-      
-      // Try to use email as fallback
-      if (profileResponse.data.email) {
-        logOperation(`Using email as student name: ${profileResponse.data.email}`);
-        return profileResponse.data.email;
-      }
+    if (error) {
+      console.error("Error fetching student profile:", error);
+      return null;
     }
     
-    // Try to get user email directly from auth
-    const { data: userData } = await dbClient.auth.getUser(studentId);
-    if (userData?.user?.email) {
-      const email = userData.user.email;
-      logOperation(`Found student email from auth: ${email}`);
-      return email.split('@')[0]; // Use part before @ as name
-    }
+    // Ensure we have the correct data type
+    const profileData = data as Profile;
     
-    logOperation(`Could not find student name in any table for ID: ${studentId}`);
-    return 'Aluno';
+    // Format the student's name
+    const firstName = profileData.first_name || "";
+    const lastName = profileData.last_name || "";
+    const name = `${firstName} ${lastName}`.trim() || "Estudante";
+    
+    // Create and return the profile object
+    return {
+      id: studentId,
+      name,
+      email: profileData.email || ""
+    };
   } catch (error) {
-    console.error('Error in getStudentName:', error);
-    return 'Aluno';
+    console.error("Error in getStudentProfile:", error);
+    toast({
+      title: "Erro",
+      description: "Não foi possível obter os dados do estudante",
+      variant: "destructive"
+    });
+    return null;
   }
 };
