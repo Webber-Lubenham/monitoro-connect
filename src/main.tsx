@@ -1,10 +1,11 @@
 
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
-import App from './App';
+import { RouterProvider, createBrowserRouter } from 'react-router-dom';
+import { routes } from './routes';
 import { supabase } from './lib/supabase';
 import './index.css';
+import routerConfig from './config/routerConfig';
 
 // Initialize Supabase auth listener
 supabase.auth.onAuthStateChange((event, session) => {
@@ -16,10 +17,11 @@ supabase.auth.onAuthStateChange((event, session) => {
   }
 });
 
+// Create router with our routes and config
+const router = createBrowserRouter(routes, routerConfig);
+
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+    <RouterProvider router={router} />
   </React.StrictMode>
 );
