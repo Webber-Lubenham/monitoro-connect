@@ -31,11 +31,16 @@ export const showLocalFallbackNotification = ({
       title,
       description,
       variant,
-      icon: <MessageCircle className="h-4 w-4" />,
+      icon: React.createElement(MessageCircle, { className: "h-4 w-4" }),
       action: action
-        ? <ToastAction altText={action.label} onClick={action.onClick}>
-            {action.label}
-          </ToastAction>
+        ? React.createElement(
+            ToastAction,
+            {
+              altText: action.label,
+              onClick: action.onClick
+            },
+            action.label
+          )
         : undefined,
     });
 
