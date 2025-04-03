@@ -8,14 +8,8 @@ import { safeQuery, safeDataExtract } from './safeQueryBuilder';
  */
 export const findUserByEmail = async (email: string): Promise<any | null> => {
   try {
-    // First attempt to find the user in the auth schema
-    const { data: authUser, error: authError } = await supabase.auth.admin.getUserByEmail(email);
-
-    if (!authError && authUser) {
-      return authUser;
-    }
-
-    // If not found in auth or not accessible, try profiles table
+    // Instead of using admin.getUserByEmail which doesn't exist,
+    // we'll query the profiles table directly
     const { data: profile, error: profileError } = await safeQuery
       .from('profiles')
       .select('*')

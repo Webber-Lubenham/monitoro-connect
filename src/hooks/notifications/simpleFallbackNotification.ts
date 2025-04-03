@@ -1,5 +1,11 @@
 
-import { toast, ToastActionElement } from "@/components/ui/use-toast";
+import { toast } from "@/components/ui/use-toast";
+
+export interface ToastActionElement {
+  altText: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}
 
 interface FallbackNotificationOptions {
   fallbackTitle?: string;
@@ -39,5 +45,50 @@ export const showFallbackNotification = (
     description: `${fallbackMessage} (${errorMessage})`,
     variant: "destructive",
     action
+  });
+};
+
+/**
+ * Creates a fallback email link for notifications
+ */
+export const createFallbackEmailLink = (payload: {
+  guardianEmail: string;
+  studentName: string;
+  latitude: number;
+  longitude: number;
+}): string => {
+  const { guardianEmail, studentName, latitude, longitude } = payload;
+  
+  // Create Google Maps link
+  const mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+  
+  // Create email subject and body
+  const subject = `Location update from ${studentName}`;
+  const body = `
+${studentName} has shared their current location with you.
+
+Current location: ${latitude}, ${longitude}
+
+View on map: ${mapUrl}
+
+This email was sent as a fallback notification from the Monitore application.
+`;
+
+  // Create mailto link
+  return `mailto:${encodeURIComponent(guardianEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+};
+
+/**
+ * Shows a manual fallback option when automated notification fails
+ */
+export const showManualFallbackOption = (mailtoLink: string): void => {
+  toast({
+    title: "Manual notification required",
+    description: "Couldn't send automated notification. Please click the button below to send via your email client.",
+    action: {
+      altText: "Send Email",
+      onClick: () => window.open(mailtoLink, '_blank'),
+      children: "Send Email"
+    } as ToastActionElement
   });
 };

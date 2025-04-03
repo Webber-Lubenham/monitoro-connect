@@ -1,5 +1,6 @@
 
 import { safeQuery } from "@/integrations/supabase/safeQueryBuilder";
+import { supabase } from "@/integrations/supabase/client";
 import { Location, LocationUpdateResponse } from "./locationTypes";
 
 export const updateLocationInDatabase = async (
@@ -8,10 +9,7 @@ export const updateLocationInDatabase = async (
 ): Promise<LocationUpdateResponse> => {
   try {
     // Get current user session
-    const { data: { session }, error: sessionError } = await safeQuery
-      .from('auth.sessions')
-      .select('user.id')
-      .maybeSingle();
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
     
     if (sessionError) {
       console.error("Session error:", sessionError);
@@ -20,6 +18,8 @@ export const updateLocationInDatabase = async (
         error: "Erro de autenticação. Por favor, faça login novamente." 
       };
     }
+    
+    const session = sessionData?.session;
     
     if (!session || !session.user) {
       console.error("No authenticated user found");
@@ -32,10 +32,10 @@ export const updateLocationInDatabase = async (
     const userId = session.user.id;
     console.log(`Updating location in database for user ${userId}:`, location);
     
-    // Insert location into database using safeQuery
-    const { error: insertError } = await safeQuery.insert(
-      'location_updates',
-      {
+    // Insert location into database using direct supabase client to avoid type issues
+    const { error: insertError } = await supabase
+      .from('location_updates')
+      .insert({
         student_id: userId,
         latitude: location.latitude,
         longitude: location.longitude,
@@ -44,8 +44,7 @@ export const updateLocationInDatabase = async (
         altitude: location.altitude || null,
         speed: location.speed || null,
         status: 'unknown'
-      }
-    );
+      });
     
     if (insertError) {
       handleDatabaseError(insertError);
@@ -71,7 +70,8 @@ export const updateLocationInDatabase = async (
 
 const verifyGuardians = async (userId: string): Promise<void> => {
   try {
-    const { data: guardians, error } = await safeQuery
+    // Use direct supabase client to avoid type issues
+    const { data: guardians, error } = await supabase
       .from('guardians')
       .select('*')
       .eq('student_id', userId);
@@ -112,7 +112,8 @@ export const getStudentLocationStatus = async (
   studentId: string
 ): Promise<'in_class' | 'in_transit' | 'unknown'> => {
   try {
-    const { data, error } = await safeQuery
+    // Use direct supabase client to avoid type issues
+    const { data, error } = await supabase
       .from('location_updates')
       .select('status')
       .eq('student_id', studentId)
