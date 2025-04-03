@@ -52,9 +52,9 @@ export const useNotifyGuardians = () => {
       const longitude = position.coords.longitude;
       const locationInfo = formatLocationInfo(latitude, longitude);
       
-      // Convert null to undefined for TypeScript compatibility
-      const accuracy = position.coords.accuracy ?? undefined;
-      const altitude = position.coords.altitude ?? undefined;
+      // Fix to handle null vs undefined properly
+      const accuracy = position.coords.accuracy !== null ? position.coords.accuracy : undefined;
+      const altitude = position.coords.altitude !== null ? position.coords.altitude : undefined;
       
       // Save location to database
       await saveLocationToDatabase(

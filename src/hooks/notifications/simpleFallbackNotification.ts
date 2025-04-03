@@ -1,93 +1,43 @@
 
-import React from 'react';
-import { toast } from '@/hooks/use-toast';
-import { MessageCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { ToastAction } from '@/components/ui/toast';
+import { toast, ToastActionElement } from "@/components/ui/use-toast";
 
-interface NotificationOptions {
-  title?: string;
-  description?: string;
-  action?: {
-    label: string;
-    onClick: () => void;
-  };
-  variant?: 'default' | 'destructive';
+interface FallbackNotificationOptions {
+  fallbackTitle?: string;
+  fallbackMessage?: string;
+  retryAction?: () => void;
 }
 
 /**
- * A simple fallback notification system that works even if there's no guardian to notify
- * It uses the toast system to show a notification to the user
+ * A simple fallback notification that can be used when other more specific
+ * notifications have failed.
  */
-export const showLocalFallbackNotification = ({
-  title = 'Conectado',
-  description = 'Sua localização está sendo monitorada',
-  action,
-  variant = 'default'
-}: NotificationOptions) => {
-  try {
-    // Show the toast with or without an action
-    toast({
-      title,
-      description,
-      variant,
-      icon: React.createElement(MessageCircle, { className: "h-4 w-4" }),
-      action: action
-        ? React.createElement(
-            ToastAction,
-            {
-              altText: action.label,
-              onClick: action.onClick
-            },
-            action.label
-          )
-        : undefined,
-    });
-
-    // Also log the notification to console for debugging
-    console.info(`[Local Notification] ${title}: ${description}`);
-  } catch (error) {
-    // If there's an error with the toast system, fallback to alert
-    console.error('Failed to show toast notification:', error);
-    try {
-      alert(`${title}: ${description}`);
-    } catch {
-      // Last resort - just log it
-      console.warn(`[NOTIFICATION] ${title}: ${description}`);
-    }
-  }
-};
-
-// Helper function to create a fallback email link with location data
-export const createFallbackEmailLink = (payload: {
-  guardianEmail: string;
-  studentName: string;
-  latitude: number;
-  longitude: number;
-}): string => {
-  const subject = encodeURIComponent(`Localização de ${payload.studentName}`);
-  const body = encodeURIComponent(
-    `Olá,\n\nEstou compartilhando minha localização com você:\n\n` +
-    `Latitude: ${payload.latitude}\n` +
-    `Longitude: ${payload.longitude}\n\n` +
-    `Veja no mapa: https://www.google.com/maps?q=${payload.latitude},${payload.longitude}\n\n` +
-    `Esta mensagem foi enviada automaticamente pelo Sistema Monitore.`
-  );
+export const showFallbackNotification = (
+  error: unknown,
+  options?: FallbackNotificationOptions
+): void => {
+  const errorMessage = error instanceof Error ? error.message : String(error);
   
-  return `mailto:${payload.guardianEmail}?subject=${subject}&body=${body}`;
-};
-
-// Shows a manual option for sending fallback notification
-export const showManualFallbackOption = (mailtoLink: string) => {
-  showLocalFallbackNotification({
-    title: 'Notificação direta falhou',
-    description: 'Não foi possível enviar notificação automática. Clique para enviar manualmente.',
-    variant: 'destructive',
-    action: {
-      label: 'Enviar Email',
-      onClick: () => {
-        window.open(mailtoLink, '_blank');
-      }
-    }
+  // Default titles and messages if not provided
+  const fallbackTitle = options?.fallbackTitle || "Something went wrong";
+  const fallbackMessage = options?.fallbackMessage || "We couldn't complete your request. Please try again later.";
+  
+  let action: ToastActionElement | undefined = undefined;
+  
+  // If a retry action is provided, create a retry button
+  if (options?.retryAction) {
+    // Create toast action without JSX to avoid type issues
+    action = {
+      altText: "Try again",
+      onClick: options.retryAction,
+      children: "Try again"
+    } as ToastActionElement;
+  }
+  
+  // Show the toast notification
+  toast({
+    title: fallbackTitle,
+    description: `${fallbackMessage} (${errorMessage})`,
+    variant: "destructive",
+    action
   });
 };

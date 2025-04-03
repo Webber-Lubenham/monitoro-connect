@@ -1,10 +1,18 @@
 
-export * from './types';
-export * from './locationUtils';
-export * from './databaseUtils';
-export * from './notificationSender';
-export * from './useNotifyGuardians';
+// Export types
+export type { NotificationLogEntry } from './types';
+export type { NotificationPosition } from './types';
 
-// Re-export the main hook as default
+// Export utility functions 
+export { saveLocationToDatabase, logNotification, fetchGuardians } from './databaseUtils';
+export { 
+  sendEdgeFunctionNotification, 
+  sendBulkNotifications, 
+  getGuardianEmails, 
+  sendFallbackNotification 
+} from './notificationSender';
+export { useNotifyGuardians } from './useNotifyGuardians';
+
+// Default export
 import { useNotifyGuardians } from './useNotifyGuardians';
 export default useNotifyGuardians;

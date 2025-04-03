@@ -12,7 +12,7 @@ export const safeQuery = {
    * @param table The table name to query
    * @returns A query builder for the specified table
    */
-  from: (table: string): PostgrestQueryBuilder<any, any, any, any> => {
+  from: <T = any>(table: string): PostgrestQueryBuilder<any, any, T, any> => {
     // @ts-ignore - We're intentionally bypassing type checking
     return supabase.from(table);
   },
@@ -23,7 +23,7 @@ export const safeQuery = {
    * @param data The data to insert
    * @returns A filter builder for the insert operation
    */
-  insert: (table: string, data: any): PostgrestFilterBuilder<any, any, any, any> => {
+  insert: <T = any>(table: string, data: any): PostgrestFilterBuilder<any, any, T, any> => {
     // @ts-ignore - We're intentionally bypassing type checking
     return supabase.from(table).insert(data);
   },
@@ -34,7 +34,7 @@ export const safeQuery = {
    * @param data The data to update
    * @returns A filter builder for the update operation
    */
-  update: (table: string, data: any): PostgrestFilterBuilder<any, any, any, any> => {
+  update: <T = any>(table: string, data: any): PostgrestFilterBuilder<any, any, T, any> => {
     // @ts-ignore - We're intentionally bypassing type checking
     return supabase.from(table).update(data);
   },
@@ -44,8 +44,45 @@ export const safeQuery = {
    * @param table The table name to delete from
    * @returns A filter builder for the delete operation
    */
-  delete: (table: string): PostgrestFilterBuilder<any, any, any, any> => {
+  delete: <T = any>(table: string): PostgrestFilterBuilder<any, any, T, any> => {
     // @ts-ignore - We're intentionally bypassing type checking
     return supabase.from(table).delete();
+  },
+
+  /**
+   * Safely select specific columns from a table
+   * @param table The table name to query
+   * @param columns The columns to select
+   * @returns A filter builder for the select operation
+   */
+  select: <T = any>(table: string, columns: string): PostgrestFilterBuilder<any, any, T, any> => {
+    // @ts-ignore - We're intentionally bypassing type checking
+    return supabase.from(table).select(columns);
   }
 };
+
+/**
+ * Type-safe utility for handling database responses with null checks
+ * @param result The result from a Supabase query
+ * @param defaultValue Optional default value to return if result.data is null
+ * @returns The data from the result, or the default value if data is null
+ */
+export function safeDataExtract<T>(
+  result: { data: T | null; error: any },
+  defaultValue: T | null = null
+): T | null {
+  if (result.error) {
+    console.error('Database error:', result.error);
+    return defaultValue;
+  }
+  return result.data || defaultValue;
+}
+
+/**
+ * Safely convert a database entity to a specific type
+ * @param entity The database entity to convert
+ * @returns The entity cast to the specified type
+ */
+export function safeEntityCast<T>(entity: any): T {
+  return entity as unknown as T;
+}

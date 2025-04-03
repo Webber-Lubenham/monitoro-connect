@@ -1,7 +1,6 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { safeQuery } from "@/integrations/supabase/safeQueryBuilder";
 import { Location, LocationUpdateResponse } from "./locationTypes";
-import { PostgrestError } from "@supabase/supabase-js";
 
 export const updateLocationInDatabase = async (
   location: Location,
@@ -9,7 +8,10 @@ export const updateLocationInDatabase = async (
 ): Promise<LocationUpdateResponse> => {
   try {
     // Get current user session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    const { data: { session }, error: sessionError } = await safeQuery
+      .from('auth.sessions')
+      .select('user.id')
+      .maybeSingle();
     
     if (sessionError) {
       console.error("Session error:", sessionError);
@@ -30,10 +32,10 @@ export const updateLocationInDatabase = async (
     const userId = session.user.id;
     console.log(`Updating location in database for user ${userId}:`, location);
     
-    // Insert location into database
-    const { error: insertError } = await supabase
-      .from('location_updates')
-      .insert({
+    // Insert location into database using safeQuery
+    const { error: insertError } = await safeQuery.insert(
+      'location_updates',
+      {
         student_id: userId,
         latitude: location.latitude,
         longitude: location.longitude,
@@ -42,7 +44,8 @@ export const updateLocationInDatabase = async (
         altitude: location.altitude || null,
         speed: location.speed || null,
         status: 'unknown'
-      });
+      }
+    );
     
     if (insertError) {
       handleDatabaseError(insertError);
@@ -68,7 +71,7 @@ export const updateLocationInDatabase = async (
 
 const verifyGuardians = async (userId: string): Promise<void> => {
   try {
-    const { data: guardians, error } = await supabase
+    const { data: guardians, error } = await safeQuery
       .from('guardians')
       .select('*')
       .eq('student_id', userId);
@@ -88,7 +91,7 @@ const verifyGuardians = async (userId: string): Promise<void> => {
   }
 };
 
-const handleDatabaseError = (error: PostgrestError): void => {
+const handleDatabaseError = (error: any): void => {
   console.error("Database error:", error);
   
   // Analyze specific error codes for better feedback
@@ -109,7 +112,7 @@ export const getStudentLocationStatus = async (
   studentId: string
 ): Promise<'in_class' | 'in_transit' | 'unknown'> => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await safeQuery
       .from('location_updates')
       .select('status')
       .eq('student_id', studentId)

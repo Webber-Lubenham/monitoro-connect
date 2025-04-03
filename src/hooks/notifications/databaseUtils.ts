@@ -84,7 +84,7 @@ export const fetchGuardians = async (studentId: string): Promise<Guardian[]> => 
     }
 
     // Cast to Guardian type
-    return guardians as unknown as Guardian[];
+    return guardians as Guardian[];
   } catch (error) {
     console.error('Exception fetching guardians:', error);
     return [];
