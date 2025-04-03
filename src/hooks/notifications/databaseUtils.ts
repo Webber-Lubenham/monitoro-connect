@@ -1,85 +1,98 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/utils/logger';
 import { NotificationLogEntry } from './types';
 import { Guardian } from '@/types/database.types';
 
 /**
- * Saves location update to the database
+ * Save location data to the database
  */
 export const saveLocationToDatabase = async (
   userId: string,
   latitude: number,
   longitude: number,
   accuracy?: number,
-  altitude?: number | null
-): Promise<boolean> => {
+  altitude?: number
+): Promise<void> => {
   try {
-    const { error } = await supabase
-      .from('location_updates')
+    // Cast any to avoid TypeScript errors with Supabase tables that aren't in types
+    const { error } = await (supabase
+      .from('location_updates') as any)
       .insert({
         student_id: userId,
         latitude,
         longitude,
-        accuracy,
-        altitude,
-        timestamp: new Date().toISOString()
+        accuracy: accuracy || null,
+        altitude: altitude || null,
+        timestamp: new Date().toISOString(),
       });
 
     if (error) {
       console.error('Error saving location:', error);
-      return false;
     }
-    
-    return true;
   } catch (error) {
     console.error('Exception saving location:', error);
-    return false;
   }
 };
 
 /**
- * Logs notification in the database
+ * Log a notification in the system
  */
 export const logNotification = async (
-  guardianEmail: string,
+  recipientEmail: string,
   studentId: string,
   notificationType: string,
-  details: Record<string, any>,
-  status: string = 'sent'
-): Promise<boolean> => {
+  data: any
+): Promise<void> => {
   try {
-    const notificationLog: NotificationLogEntry = {
-      guardianEmail,
-      studentId,
-      notificationType,
-      details,
-      status // Now this is required and always has a value
+    // Create log entry
+    const logEntry: any = {
+      student_id: studentId,
+      notification_type: notificationType,
+      status: 'sent',
+      recipient_email: recipientEmail,
+      metadata: data,
+      sent_at: new Date().toISOString(),
     };
 
-    await supabase
-      .from('notification_logs')
-      .insert(notificationLog);
-    return true;
+    // Insert into logs table
+    const { error } = await (supabase
+      .from('notification_logs') as any)
+      .insert(logEntry);
+
+    if (error) {
+      console.error('Error logging notification:', error);
+    }
   } catch (error) {
-    console.error('Error logging notification:', error);
-    return false;
+    console.error('Exception logging notification:', error);
   }
 };
 
 /**
- * Fetches guardians for a student
+ * Fetch guardians for a student
  */
-export const fetchGuardians = async (userId: string): Promise<Guardian[]> => {
-  const { data: guardians, error } = await supabase
-    .from('guardians')
-    .select('*')
-    .eq('student_id', userId);
+export const fetchGuardians = async (studentId: string): Promise<Guardian[]> => {
+  try {
+    // Cast to avoid TypeScript errors with tables not in types
+    const { data: guardians, error } = await (supabase
+      .from('guardians') as any)
+      .select('*')
+      .eq('student_id', studentId);
 
-  if (error) {
-    console.error('Error fetching guardians:', error);
-    throw new Error('Não foi possível obter a lista de responsáveis');
+    if (error) {
+      console.error('Error fetching guardians:', error);
+      return [];
+    }
+
+    if (!guardians || guardians.length === 0) {
+      console.warn(`No guardians found for student ${studentId}`);
+      return [];
+    }
+
+    // Cast to Guardian type
+    return guardians as unknown as Guardian[];
+  } catch (error) {
+    console.error('Exception fetching guardians:', error);
+    return [];
   }
-
-  // Type-casting and filtering out invalid data
-  return (guardians || []).filter(guardian => guardian.student_id) as Guardian[];
 };

@@ -16,3 +16,9 @@ export interface NotificationPosition {
   accuracy?: number;
   timestamp: string;
 }
+
+export interface NotificationResult {
+  success: boolean;
+  error?: string;
+  data?: any;
+}

@@ -36,17 +36,16 @@ export const useNotifyGuardians = () => {
       }
 
       // Get user's name from profile
-      const { data: profile, error: profileError } = await supabase
+      const { data: profile } = await supabase
         .from('profiles')
-        .select('full_name')
+        .select('first_name, last_name')
         .eq('id', userId)
         .single();
 
-      if (profileError) {
-        console.error('Error fetching user profile:', profileError);
-      }
-
-      const studentName = profile?.full_name || userEmail;
+      // Use a fallback name if profile data isn't available
+      const studentName = profile ? 
+        `${profile.first_name || ''} ${profile.last_name || ''}`.trim() : 
+        userEmail;
 
       // Extract location data
       const latitude = position.coords.latitude;
@@ -93,8 +92,8 @@ export const useNotifyGuardians = () => {
           const notificationData = {
             studentName: studentName,
             studentEmail: userEmail,
-            guardianName: guardian.nome,
-            guardianEmail: guardian.email,
+            guardianName: guardian.nome || 'Responsável',
+            guardianEmail: guardian.email || '',
             latitude,
             longitude,
             accuracy: position.coords.accuracy,
@@ -102,6 +101,12 @@ export const useNotifyGuardians = () => {
             mapUrl,
             isEmergency: false
           };
+          
+          // Skip guardians without email
+          if (!guardian.email) {
+            console.warn(`Guardian ${guardian.id} has no email, skipping notification`);
+            continue;
+          }
           
           // Send the notification
           const result = await sendEdgeFunctionNotification(notificationData);
@@ -124,7 +129,7 @@ export const useNotifyGuardians = () => {
             );
           } else {
             const errorMessage = result.error || 'Erro desconhecido';
-            errorMessages.push(`Erro ao notificar ${guardian.nome}: ${errorMessage}`);
+            errorMessages.push(`Erro ao notificar ${guardian.nome || guardian.email}: ${errorMessage}`);
             console.error(`Error notifying guardian ${guardian.id}:`, errorMessage);
             
             // Try fallback method
@@ -142,7 +147,7 @@ export const useNotifyGuardians = () => {
           }
         } catch (error: any) {
           const errorMessage = error instanceof Error ? error.message : String(error);
-          errorMessages.push(`Falha ao enviar para ${guardian.nome}: ${errorMessage}`);
+          errorMessages.push(`Falha ao enviar para ${guardian.nome || guardian.email}: ${errorMessage}`);
           console.error(`Exception notifying guardian ${guardian.id}:`, error);
           
           // Try fallback method
@@ -193,13 +198,19 @@ export const useNotifyGuardians = () => {
     try {
       console.log(`Attempting fallback notification for ${guardian.email}`);
       
+      // Skip guardians without email
+      if (!guardian.email) {
+        console.warn(`Guardian ${guardian.id} has no email, skipping fallback notification`);
+        return false;
+      }
+      
       // Format timestamp for display
       const formattedTime = new Date(timestamp).toLocaleString('pt-BR');
       
       // Send fallback notification
       const fallbackResult = await sendFallbackNotification(
         guardian.email,
-        guardian.nome,
+        guardian.nome || 'Responsável',
         studentName,
         userEmail,
         latitude,
