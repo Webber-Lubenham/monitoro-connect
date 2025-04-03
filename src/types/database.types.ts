@@ -1,3 +1,4 @@
+
 export interface Guardian {
   id: string;
   student_id: string;
@@ -49,4 +50,50 @@ export interface NotificationPreference {
   notification_type: 'whatsapp' | 'email' | 'both';
   created_at: string;
   updated_at: string;
+}
+
+export interface Profile {
+  id: string;
+  first_name?: string;
+  last_name?: string;
+  email: string;
+  role?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface SupabaseNotificationPreference {
+  id: string;
+  parent_id?: string;
+  student_id: string;
+  email: string;
+  whatsapp_number?: string;
+  notification_type: 'email' | 'both' | 'whatsapp';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GuardianData {
+  nome: string;
+  email: string;
+  telefone?: string;
+  is_primary?: boolean;
+  cpf?: string;
+  student_id: string;
+}
+
+export interface GuardianUpdateData {
+  nome?: string;
+  email?: string;
+  telefone?: string;
+  is_primary?: boolean;
+  cpf?: string;
+}
+
+export interface LogEntry {
+  id?: string;
+  message: string;
+  level: string;
+  timestamp?: string;
+  metadata?: Record<string, any>;
 }

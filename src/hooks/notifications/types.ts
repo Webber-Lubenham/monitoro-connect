@@ -1,33 +1,18 @@
 
-/**
- * Type definitions for notification system
- */
-
-// Payload for sending a notification
-export interface NotificationPayload {
-  guardianEmail: string;
-  studentName: string;
-  studentEmail?: string;
-  guardianName?: string;
-  latitude: number;
-  longitude: number;
-  timestamp?: string;
-  mapUrl?: string;
-  accuracy?: number;
-  isEmergency?: boolean;
-}
-
-// Result from notification operation
-export interface NotificationResult {
-  success: boolean;
+export interface NotificationLogEntry {
+  id: string;
+  student_id: string;
+  guardian_id?: string;
+  notification_type: string;
+  status: string;
+  sent_at: string;
   message?: string;
-  error?: any;
+  created_at: string;
 }
 
-// Location data specific to notifications
-export interface NotificationLocationData {
+export interface NotificationPosition {
   latitude: number;
   longitude: number;
   accuracy?: number;
-  timestamp?: string;
+  timestamp: string;
 }
