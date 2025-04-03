@@ -1,13 +1,13 @@
 
 import { supabase } from "./client";
 import { Database } from "./database.types";
-import { PostgrestFilterBuilder, PostgrestQueryBuilder } from "@supabase/postgrest-js";
 
-// Type-safe DB client that allows accessing all tables
+// Type-safe DB helper that allows accessing tables without type errors
 export const db = {
+  // Direct access to tables with proper types
   from: <T extends keyof Database['public']['Tables']>(
     table: T
-  ): PostgrestQueryBuilder<Database['public']['Tables'], Database['public']['Tables'][T]['Row'], T> => {
+  ) => {
     return supabase.from(table);
   },
   

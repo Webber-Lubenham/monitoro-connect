@@ -1,108 +1,95 @@
 
-import { GuardianData } from '../mutations/addGuardian';
 import { dbClient } from '../../base/baseService';
+import { asType } from '@/integrations/supabase/supabaseClient';
 
 /**
- * Verifica se um responsável já existe para um aluno pelo email
+ * Check if a guardian email already exists for a student
  */
-export const checkExistingGuardianByEmail = async (
-  studentId: string,
-  email: string
-): Promise<boolean> => {
-  const normalizedEmail = email.toLowerCase().trim();
-  
+export const checkGuardianEmailExists = async (studentId: string, email: string): Promise<boolean> => {
   try {
-    // Skip destructuring to avoid deep type inference
-    const response = await dbClient
+    const formattedEmail = email.toLowerCase().trim();
+    
+    const { data, error } = await dbClient
       .from('guardians')
       .select('id')
       .eq('student_id', studentId)
-      .eq('email', normalizedEmail)
-      .maybeSingle();
-      
-    if (response.error) {
-      console.error('Error checking existing guardian by email:', response.error);
+      .eq('email', formattedEmail);
+    
+    if (error) {
+      console.error('Error checking guardian email:', error);
       return false;
     }
     
-    return !!response.data;
-  } catch (e) {
-    console.error('Exception in checkExistingGuardianByEmail:', e);
+    return (data?.length || 0) > 0;
+  } catch (error) {
+    console.error('Exception checking guardian email:', error);
     return false;
   }
 };
 
 /**
- * Verifica se um responsável já existe para um aluno pelo CPF
+ * Check if a guardian with the specified CPF already exists for this student
  */
-export const checkExistingGuardianByCpf = async (
-  studentId: string,
-  cpf: string
-): Promise<boolean> => {
-  if (!cpf) return false;
-  
+export const checkGuardianCpfExists = async (studentId: string, cpf: string): Promise<boolean> => {
   try {
-    // Execute the query and get the response directly
-    const response = await dbClient
-      .from('guardians')
-      .select('id')
-      .eq('student_id', studentId)
-      .eq('cpf', cpf)
-      .maybeSingle();
-      
-    if (response.error) {
-      console.error('Error checking existing guardian by CPF:', response.error);
+    const formattedCpf = cpf.replace(/[^\d]/g, '').trim();
+    
+    if (!formattedCpf) {
       return false;
     }
     
-    return !!response.data;
-  } catch (e) {
-    console.error('Exception in checkExistingGuardianByCpf:', e);
+    const { data, error } = await dbClient
+      .from('guardians')
+      .select('id')
+      .eq('student_id', studentId)
+      .eq('cpf', formattedCpf);
+    
+    if (error) {
+      console.error('Error checking guardian CPF:', error);
+      return false;
+    }
+    
+    return (data?.length || 0) > 0;
+  } catch (error) {
+    console.error('Exception checking guardian CPF:', error);
     return false;
   }
 };
 
-// Simple interface for student data
-interface StudentProfileData {
-  id: string;
-  name?: string;
-  email?: string;
-}
-
 /**
- * Verifica se o aluno existe
+ * Get a student's details for displaying in guardian-related UIs
  */
-export const verifyStudentExists = async (studentId: string): Promise<{exists: boolean, studentData?: StudentProfileData}> => {
+export const getStudentDetailsForGuardians = async (studentId: string) => {
   try {
-    // Skip destructuring to avoid deep type inference
-    const response = await dbClient
+    const { data, error } = await dbClient
       .from('profiles')
-      .select('id, name, email')
+      .select('first_name, last_name, email')
       .eq('id', studentId)
-      .maybeSingle();
-      
-    if (response.error) {
-      console.error(`Error verifying student: ${response.error.message}`);
-      return { exists: false };
+      .single();
+    
+    if (error) {
+      console.error('Error getting student details:', error);
+      return {
+        id: studentId,
+        name: 'Aluno',
+        email: ''
+      };
     }
     
-    if (!response.data) {
-      return { exists: false };
-    }
+    // Create a name from first_name and last_name, fallback to 'Aluno'
+    const name = `${data.first_name || ''} ${data.last_name || ''}`.trim() || 'Aluno';
     
-    // Map the data to our interface with proper type handling
-    const studentData: StudentProfileData = {
-      id: response.data.id,
-      name: response.data.name || undefined,  // Convert null to undefined
-      email: response.data.email || undefined // Convert null to undefined
-    };
-    
-    return { 
-      exists: true, 
-      studentData 
+    return {
+      id: studentId,
+      name,
+      email: data.email || ''
     };
   } catch (error) {
-    console.error('Exception in verifyStudentExists:', error);
-    return { exists: false };
+    console.error('Exception getting student details:', error);
+    return {
+      id: studentId,
+      name: 'Aluno',
+      email: ''
+    };
   }
 };

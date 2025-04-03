@@ -1,11 +1,7 @@
 
-import { toast } from "@/components/ui/use-toast";
-
-export interface ToastActionElement {
-  altText: string;
-  onClick: () => void;
-  children: React.ReactNode;
-}
+import { toast } from "@/hooks/use-toast";
+import { ReactNode } from "react";
+import { ToastActionElement } from "@/hooks/use-toast";
 
 interface FallbackNotificationOptions {
   fallbackTitle?: string;
@@ -31,7 +27,7 @@ export const showFallbackNotification = (
   
   // If a retry action is provided, create a retry button
   if (options?.retryAction) {
-    // Create toast action without JSX to avoid type issues
+    // Create a React element instead of a plain object
     action = {
       altText: "Try again",
       onClick: options.retryAction,

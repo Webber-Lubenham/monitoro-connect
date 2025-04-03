@@ -1,6 +1,7 @@
 
 import { dbClient, logOperation } from '../../base/baseService';
 import { Guardian } from '@/types/database.types';
+import { asType } from '@/integrations/supabase/supabaseClient';
 
 /**
  * Get a guardian's details by ID
@@ -20,7 +21,7 @@ export const getGuardianById = async (guardianId: string): Promise<Guardian | nu
       return null;
     }
     
-    return data as Guardian;
+    return asType<Guardian>(data);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logOperation(`Exceção em getGuardianById: ${errorMessage}`);
@@ -49,15 +50,15 @@ export const getGuardianWithStudentInfo = async (guardianId: string): Promise<(G
     if (guardian.student_id) {
       const { data: profileData, error: profileError } = await dbClient
         .from('profiles')
-        .select('name')
+        .select('first_name, last_name')
         .eq('id', guardian.student_id)
         .single();
       
       if (profileError) {
         logOperation(`Erro ao buscar nome do estudante: ${profileError.message}`);
       } else if (profileData) {
-        // Convert null to undefined if needed
-        studentName = profileData.name || undefined;
+        // Construct name from first_name and last_name
+        studentName = `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim() || undefined;
       }
     }
     

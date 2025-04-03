@@ -35,9 +35,24 @@ export async function getUserProfile(userId: string): Promise<Profile | null> {
  */
 export async function saveGuardian(guardian: Partial<Guardian> & { student_id: string }): Promise<string | null> {
   try {
+    // Make sure email is provided since it's required by the database
+    if (!guardian.email) {
+      console.error("Error saving guardian: Email is required");
+      return null;
+    }
+    
+    // Create copy of guardian with required fields
+    const guardianToSave = {
+      ...guardian,
+      nome: guardian.nome || '',
+      telefone: guardian.telefone || '',
+      email: guardian.email,
+      is_primary: guardian.is_primary ?? false
+    };
+    
     const { data, error } = await supabase
       .from('guardians')
-      .upsert(guardian)
+      .upsert(guardianToSave)
       .select('id')
       .single();
       

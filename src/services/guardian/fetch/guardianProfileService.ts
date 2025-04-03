@@ -12,31 +12,25 @@ export const getStudentName = async (studentId: string): Promise<string> => {
     // Try profiles table first
     const profileResponse = await dbClient
       .from('profiles')
-      .select('full_name, name, email')
+      .select('first_name, last_name, email')
       .eq('id', studentId)
       .maybeSingle();
     
     if (!profileResponse.error && profileResponse.data) {
-      // Try to get full_name first, then name, then email as fallback
-      const name = profileResponse.data.full_name || 
-                   profileResponse.data.name || 
-                   profileResponse.data.email;
-      if (name) {
-        logOperation(`Found student name in profiles: ${name}`);
-        return name;
+      // Try to build name from first and last name
+      if (profileResponse.data.first_name || profileResponse.data.last_name) {
+        const name = `${profileResponse.data.first_name || ''} ${profileResponse.data.last_name || ''}`.trim();
+        if (name) {
+          logOperation(`Found student name in profiles: ${name}`);
+          return name;
+        }
       }
-    }
-    
-    // Then try children table
-    const childrenResponse = await dbClient
-      .from('children')
-      .select('name')
-      .eq('id', studentId)
-      .maybeSingle();
-    
-    if (!childrenResponse.error && childrenResponse.data?.name) {
-      logOperation(`Found student name in children: ${childrenResponse.data.name}`);
-      return childrenResponse.data.name;
+      
+      // Try to use email as fallback
+      if (profileResponse.data.email) {
+        logOperation(`Using email as student name: ${profileResponse.data.email}`);
+        return profileResponse.data.email;
+      }
     }
     
     // Try to get user email directly from auth
