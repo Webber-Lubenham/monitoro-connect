@@ -30,16 +30,14 @@ export const useFallbackNotification = () => {
       
       // If popup blocked or failed, show manual option
       if (!emailWindow) {
-        // Create a notification payload
-        const payload = {
-          guardianEmail: emailData.to,
-          studentName: emailData.studentName,
-          latitude: emailData.latitude,
-          longitude: emailData.longitude
-        };
-        
         // Show fallback option using the shared function
-        showManualFallbackOption(createFallbackEmailLink(payload));
+        showManualFallbackOption(
+          emailData.to,
+          emailData.guardianName,
+          emailData.studentName,
+          emailData.latitude,
+          emailData.longitude
+        );
       }
       
       setIsLoading(false);
