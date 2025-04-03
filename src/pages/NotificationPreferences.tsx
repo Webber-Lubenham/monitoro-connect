@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { safeQuery } from "@/integrations/supabase/safeQueryBuilder";
 import { NotificationPreference } from "@/types/database.types";
 
 interface SupabaseNotificationPreference {
@@ -40,7 +41,7 @@ const NotificationPreferences = () => {
         return;
       }
 
-      const { data: prefsData, error } = await supabase
+      const { data: prefsData, error } = await safeQuery
         .from('parent_notification_preferences')
         .select('*')
         .eq('parent_id', user.id);
@@ -48,7 +49,7 @@ const NotificationPreferences = () => {
       if (error) throw error;
       
       // Convert from Supabase response type to our app type, ensuring null values are handled
-      const processedPrefs: NotificationPreference[] = (prefsData || []).map((pref: SupabaseNotificationPreference) => ({
+      const processedPrefs: NotificationPreference[] = (prefsData || []).map((pref: any) => ({
         id: pref.id,
         notification_type: pref.notification_type || 'email', // Default to 'email' if null
         whatsapp_number: pref.whatsapp_number || '',
@@ -87,7 +88,7 @@ const NotificationPreferences = () => {
         ...(data.whatsapp_number !== undefined && { whatsapp_number: data.whatsapp_number || null }),
       };
 
-      const { error } = await supabase
+      const { error } = await safeQuery
         .from('parent_notification_preferences')
         .upsert(updateData);
 

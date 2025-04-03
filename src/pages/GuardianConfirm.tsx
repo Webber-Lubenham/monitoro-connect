@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { safeQuery } from "@/integrations/supabase/safeQueryBuilder";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, CheckCircle, AlertCircle } from "lucide-react";
 
@@ -53,7 +54,7 @@ const GuardianConfirm = () => {
         }
         
         // Fetch guardian information from database
-        const { data, error: fetchError } = await supabase
+        const { data, error: fetchError } = await safeQuery
           .from("guardians")
           .select("*")
           .eq("id", guardianId)
@@ -136,9 +137,8 @@ const GuardianConfirm = () => {
       }
       
       // 2. Update guardian status to active
-      const { error: updateError } = await supabase
-        .from("guardians")
-        .update({ status: "active" })
+      const { error: updateError } = await safeQuery
+        .update("guardians", { status: "active" })
         .eq("id", guardian.id || "");
       
       if (updateError) {

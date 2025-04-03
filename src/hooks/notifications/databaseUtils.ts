@@ -1,5 +1,5 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { safeQuery } from '@/integrations/supabase/safeQueryBuilder';
 import { logger } from '@/utils/logger';
 import { NotificationLogEntry } from './types';
 import { Guardian } from '@/types/database.types';
@@ -15,17 +15,14 @@ export const saveLocationToDatabase = async (
   altitude?: number
 ): Promise<void> => {
   try {
-    // Cast any to avoid TypeScript errors with Supabase tables that aren't in types
-    const { error } = await (supabase
-      .from('location_updates') as any)
-      .insert({
-        student_id: userId,
-        latitude,
-        longitude,
-        accuracy: accuracy || null,
-        altitude: altitude || null,
-        timestamp: new Date().toISOString(),
-      });
+    const { error } = await safeQuery.insert('location_updates', {
+      student_id: userId,
+      latitude,
+      longitude,
+      accuracy: accuracy || null,
+      altitude: altitude || null,
+      timestamp: new Date().toISOString(),
+    });
 
     if (error) {
       console.error('Error saving location:', error);
@@ -46,7 +43,7 @@ export const logNotification = async (
 ): Promise<void> => {
   try {
     // Create log entry
-    const logEntry: any = {
+    const logEntry = {
       student_id: studentId,
       notification_type: notificationType,
       status: 'sent',
@@ -56,9 +53,7 @@ export const logNotification = async (
     };
 
     // Insert into logs table
-    const { error } = await (supabase
-      .from('notification_logs') as any)
-      .insert(logEntry);
+    const { error } = await safeQuery.insert('notification_logs', logEntry);
 
     if (error) {
       console.error('Error logging notification:', error);
@@ -73,9 +68,8 @@ export const logNotification = async (
  */
 export const fetchGuardians = async (studentId: string): Promise<Guardian[]> => {
   try {
-    // Cast to avoid TypeScript errors with tables not in types
-    const { data: guardians, error } = await (supabase
-      .from('guardians') as any)
+    const { data: guardians, error } = await safeQuery
+      .from('guardians')
       .select('*')
       .eq('student_id', studentId);
 

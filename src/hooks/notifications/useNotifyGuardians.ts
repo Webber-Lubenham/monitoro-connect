@@ -52,13 +52,17 @@ export const useNotifyGuardians = () => {
       const longitude = position.coords.longitude;
       const locationInfo = formatLocationInfo(latitude, longitude);
       
+      // Convert null to undefined for TypeScript compatibility
+      const accuracy = position.coords.accuracy ?? undefined;
+      const altitude = position.coords.altitude ?? undefined;
+      
       // Save location to database
       await saveLocationToDatabase(
         userId,
         latitude,
         longitude,
-        position.coords.accuracy,
-        position.coords.altitude
+        accuracy,
+        altitude
       );
 
       // Get user's guardians
@@ -96,7 +100,7 @@ export const useNotifyGuardians = () => {
             guardianEmail: guardian.email || '',
             latitude,
             longitude,
-            accuracy: position.coords.accuracy,
+            accuracy: accuracy,
             timestamp,
             mapUrl,
             isEmergency: false
