@@ -1,5 +1,6 @@
-import { useAuth } from "../contexts/AuthContext"; // Corrected import path
-import { Card, CardHeader, CardContent } from "../components/ui/card"; // Corrected import path
+
+import { useAuth } from "../providers/AuthProvider"; // Updated import path
+import { Card, CardHeader, CardContent } from "../components/ui/card";
 
 export function ProfilePage() {
   const { user } = useAuth();

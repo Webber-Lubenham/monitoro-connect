@@ -3,6 +3,8 @@ import { useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import { supabaseUrl, supabaseAnonKey } from "./integrations/supabase/config";
 import { AuthProvider } from "./providers/AuthProvider";
+import { Toaster } from "./components/ui/toaster";
+import { Toaster as Sonner } from "./components/ui/sonner";
 
 function App() {
   // Log the environment to help with debugging
@@ -18,6 +20,8 @@ function App() {
     <AuthProvider>
       <div className="min-h-screen">
         <Outlet />
+        <Toaster />
+        <Sonner />
       </div>
     </AuthProvider>
   );
