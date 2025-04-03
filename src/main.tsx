@@ -5,7 +5,7 @@ import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 import { routes } from './routes';
 import { supabase } from './lib/supabase';
 import './index.css';
-import routerConfig from './config/routerConfig';
+import App from './App';
 
 // Initialize Supabase auth listener
 supabase.auth.onAuthStateChange((event, session) => {
@@ -17,8 +17,8 @@ supabase.auth.onAuthStateChange((event, session) => {
   }
 });
 
-// Create router with our routes and config
-const router = createBrowserRouter(routes, routerConfig);
+// Create router with our routes
+const router = createBrowserRouter(routes);
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

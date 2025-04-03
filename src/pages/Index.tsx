@@ -15,13 +15,13 @@ const Index = () => {
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [connectionError, setConnectionError] = useState(false);
   const navigate = useNavigate();
-  const { user, isLoading } = useAuth();
+  const auth = useAuth();
 
   useEffect(() => {
     // If user is already authenticated, redirect to the appropriate dashboard
-    if (user) {
+    if (auth.user) {
       console.log("User already authenticated, redirecting...");
-      const userRole = user.user_metadata?.role || 'student';
+      const userRole = auth.user.user_metadata?.role || 'student';
       
       if (userRole === 'guardian' || userRole === 'parent') {
         navigate('/parent-dashboard', { replace: true });
@@ -29,7 +29,7 @@ const Index = () => {
         navigate('/dashboard', { replace: true });
       }
     }
-  }, [user, navigate]);
+  }, [auth.user, navigate]);
 
   const handleSignupSuccess = () => {
     const loginTab = document.querySelector('[value="login"]') as HTMLElement;
@@ -38,7 +38,7 @@ const Index = () => {
     }
   };
 
-  if (isLoading) {
+  if (auth.isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

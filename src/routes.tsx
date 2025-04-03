@@ -17,10 +17,11 @@ import Activate from "./pages/Activate";
 import RootLayout from "./components/RootLayout";
 import RequireAuth from "./components/auth/RequireAuth";
 import Index from "./pages/Index";
+import App from "./App";
 
 export const routes = [
   {
-    element: <RootLayout />,
+    element: <App />,
     children: [
       {
         path: "/",

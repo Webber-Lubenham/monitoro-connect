@@ -1,10 +1,7 @@
 
-import { RouterProviderProps } from 'react-router-dom';
+import { Router } from 'react-router-dom';
 
-export const routerConfig: Partial<RouterProviderProps> = {
-  future: {
-    v7_startTransition: true
-  }
-};
+// Remove the future config that was causing the issue
+const routerConfig = {};
 
 export default routerConfig;
