@@ -1,3 +1,4 @@
+
 // If this file exists, just add the Guardian type and export it
 export interface Guardian {
   id: string;
@@ -16,6 +17,27 @@ export interface Guardian {
   is_approved?: boolean;
 }
 
+// Add GuardianForm interface which was missing
+export interface GuardianForm {
+  nome: string;
+  telefone: string;
+  email: string;
+  isPrimary: boolean;
+  cpf?: string;
+}
+
+// Add Profile interface which was missing
+export interface Profile {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email?: string;
+  role?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// Update NotificationPreference to match the schema
 export interface NotificationPreference {
   id: string;
   guardian_id: string;
@@ -25,6 +47,21 @@ export interface NotificationPreference {
   app_notifications: boolean;
   created_at: string;
   updated_at: string;
+  
+  // Added these properties to fix type errors in NotificationPreferences.tsx
+  student_id?: string;
+  email?: string;
+  whatsapp_number?: string;
+  notification_type?: string;
+}
+
+// Add LogEntry interface
+export interface LogEntry {
+  id: string;
+  message: string;
+  level: string;
+  timestamp: string;
+  metadata?: any;
 }
 
 export interface LocationUpdate {
