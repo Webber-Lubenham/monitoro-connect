@@ -9,8 +9,12 @@ export const db = {
   // Direct access to tables with proper types
   from: <T extends keyof Database['public']['Tables']>(
     table: T
-  ): PostgrestQueryBuilder<Database['public']['Tables'][T]['Row']> => {
-    return supabase.from(table) as PostgrestQueryBuilder<Database['public']['Tables'][T]['Row']>;
+  ) => {
+    return supabase.from(table) as PostgrestQueryBuilder<
+      Database['public']['Tables'][T]['Row'],
+      Database['public']['Tables'][T]['Row'],
+      unknown
+    >;
   },
   
   // Helper method for casting response data to a specific type
