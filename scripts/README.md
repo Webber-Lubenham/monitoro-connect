@@ -30,3 +30,22 @@ chmod +x fix_migrations.sh
 - Se o psql não estiver no PATH, especifique o caminho completo no script
 - Verifique se o .env contém DATABASE_URL corretamente configurada
 - Para debug, execute com `bash -x fix_migrations.sh`
+
+## Scripts de Verificação de Repositório
+
+### verify_repo.sh (Linux/Mac)
+```bash
+chmod +x verify_repo.sh
+./verify_repo.sh
+```
+
+### verify_repo.ps1 (Windows)
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\verify_repo.ps1
+```
+
+Estes scripts verificam se o repositório remoto está configurado corretamente para:
+`git@github.com:Webber-Lubenham/monitoro-connect.git`
+
+Retornam erro se a configuração estiver incorreta.
