@@ -1,3 +1,4 @@
+
 -- Add user_id column to parent_notification_preferences
 ALTER TABLE parent_notification_preferences
 ADD COLUMN user_id UUID REFERENCES auth.users(id);

@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { GuardianForm } from '@/types/database.types';
 import * as guardianService from '@/services/guardianService';
@@ -65,7 +66,7 @@ export const useGuardianAddition = (
         nome: newGuardian.nome.trim(),
         telefone: newGuardian.telefone.trim(),
         email: newGuardian.email.trim().toLowerCase(),
-        is_primary: newGuardian.isPrimary,
+        is_primary: newGuardian.is_primary,
         cpf: newGuardian.cpf?.trim()
       });
 

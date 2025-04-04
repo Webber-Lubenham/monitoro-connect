@@ -100,11 +100,11 @@ export const GuardianForm = ({
 
         <div className="flex items-center space-x-2">
           <Switch
-            id="isPrimary"
-            checked={newGuardian.isPrimary}
-            onCheckedChange={(checked) => handleChange('isPrimary', checked)}
+            id="is_primary"
+            checked={newGuardian.is_primary}
+            onCheckedChange={(checked) => handleChange('is_primary', checked)}
           />
-          <Label htmlFor="isPrimary">Responsável Principal</Label>
+          <Label htmlFor="is_primary">Responsável Principal</Label>
         </div>
 
         <div className="flex justify-end space-x-2 pt-2">

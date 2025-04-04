@@ -1,80 +1,77 @@
-import { supabase } from '@/lib/supabase';
 
-type LogLevel = 'error' | 'info' | 'debug' | 'warn';
+import { supabase } from '@/integrations/supabase/client';
+import { PostgrestError } from '@supabase/supabase-js';
+import { LogEntry } from '@/types/database.types';
 
-interface LogEntry {
-  level: LogLevel;
-  message: string;
-  timestamp: string;
-  data?: any;
-  userId?: string;
-  error?: any;
+// Log levels
+export enum LogLevel {
+  DEBUG = 'debug',
+  INFO = 'info',
+  WARNING = 'warning',
+  ERROR = 'error',
+  CRITICAL = 'critical',
 }
 
-class Logger {
-  private async persistLog(entry: LogEntry) {
-    try {
-      const { error } = await supabase
-        .from('logs')
-        .insert([entry]);
+/**
+ * Logs a message to the database
+ * @param level Log level
+ * @param message Log message
+ * @param metadata Optional metadata
+ */
+export const logToDatabase = async (
+  level: LogLevel,
+  message: string,
+  metadata?: Record<string, any>
+): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('logs')
+      .insert({
+        level,
+        message,
+        metadata,
+        timestamp: new Date().toISOString(),
+      });
 
-      if (error) {
-        console.error('Failed to persist log:', error);
-      }
-    } catch (e) {
-      console.error('Error persisting log:', e);
+    if (error) {
+      console.error('Error logging to database:', error);
     }
+  } catch (err) {
+    console.error('Exception logging to database:', err);
   }
+};
 
-  private formatError(error: any): string {
-    if (error instanceof Error) {
-      return `${error.name}: ${error.message}\nStack: ${error.stack}`;
+/**
+ * Fetches logs from the database
+ * @param limit Maximum number of logs to fetch
+ * @param level Optional log level filter
+ * @returns Array of log entries
+ */
+export const fetchLogs = async (
+  limit: number = 100,
+  level?: LogLevel
+): Promise<LogEntry[]> => {
+  try {
+    let query = supabase
+      .from('logs')
+      .select('*')
+      .order('timestamp', { ascending: false })
+      .limit(limit);
+
+    if (level) {
+      query = query.eq('level', level);
     }
-    return String(error);
-  }
 
-  private createLogEntry(
-    level: LogLevel,
-    message: string,
-    data?: any,
-    error?: any
-  ): LogEntry {
-    const user = supabase.auth.getUser();
-    return {
-      level,
-      message,
-      timestamp: new Date().toISOString(),
-      data: data ? JSON.stringify(data) : undefined,
-      userId: user ? (user as any).id : undefined,
-      error: error ? this.formatError(error) : undefined
-    };
-  }
+    const { data, error } = await query;
 
-  error(message: string, error?: any, data?: any) {
-    const entry = this.createLogEntry('error', message, data, error);
-    console.error(`[${entry.timestamp}] ERROR: ${message}`, error, data);
-    this.persistLog(entry);
-  }
-
-  warn(message: string, data?: any) {
-    const entry = this.createLogEntry('warn', message, data);
-    console.warn(`[${entry.timestamp}] WARN: ${message}`, data);
-    this.persistLog(entry);
-  }
-
-  info(message: string, data?: any) {
-    const entry = this.createLogEntry('info', message, data);
-    console.info(`[${entry.timestamp}] INFO: ${message}`, data);
-    this.persistLog(entry);
-  }
-
-  debug(message: string, data?: any) {
-    if (import.meta.env.DEV) {
-      const entry = this.createLogEntry('debug', message, data);
-      console.debug(`[${entry.timestamp}] DEBUG: ${message}`, data);
-      this.persistLog(entry);
+    if (error) {
+      console.error('Error fetching logs:', error);
+      return [];
     }
-  }
-}
 
-export const logger = new Logger();
+    return data as LogEntry[];
+  } catch (err) {
+    console.error('Exception fetching logs:', err);
+    return [];
+  }
+};

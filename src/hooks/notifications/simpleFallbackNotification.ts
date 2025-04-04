@@ -1,7 +1,7 @@
 
 import { toast } from "@/components/ui/use-toast";
 import { ToastAction } from "@/components/ui/toast";
-import React from "react";
+import { createElement } from "react";
 
 /**
  * Creates a fallback link for manual email notification
@@ -21,7 +21,7 @@ export const createFallbackEmailLink = (
   const mapLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
   const body = `Olá,\n\nO aluno ${studentName} compartilhou sua localização atual com você.\n\nVer no mapa: ${mapLink}\n\nCoordenadas: ${latitude}, ${longitude}\n\nEste email foi enviado automaticamente pelo sistema de localização.`;
 
-  return `mailto:${guardianEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  return `mailto:${encodeURIComponent(guardianEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 };
 
 /**
@@ -46,11 +46,9 @@ export const showManualFallbackOption = (
     description: `Não foi possível enviar a notificação automaticamente para ${guardianName}. Você pode enviar manualmente clicando no botão abaixo.`,
     variant: "destructive",
     duration: 10000,
-    action: (
-      <ToastAction altText="Enviar email manualmente" onClick={() => window.open(mailtoLink, "_blank")}>
-        Enviar email manualmente
-      </ToastAction>
-    )
+    action: <ToastAction altText="Enviar email manualmente" onClick={() => window.open(mailtoLink, "_blank")}>
+      Enviar email manualmente
+    </ToastAction> as any
   });
 };
 
@@ -67,10 +65,8 @@ export const showSuccessNotification = (
     title: "Notificação enviada com sucesso",
     description: `${guardianName} (${guardianEmail}) foi notificado sobre sua localização atual.`,
     duration: 5000,
-    action: (
-      <ToastAction altText="OK" onClick={() => {}}>
-        OK
-      </ToastAction>
-    )
+    action: <ToastAction altText="OK" onClick={() => {}}>
+      OK
+    </ToastAction> as any
   });
 };

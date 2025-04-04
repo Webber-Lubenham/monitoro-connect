@@ -1,109 +1,113 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { Guardian, LogEntry } from "@/types/database.types";
-
-// Type safe wrapper functions for common database operations
-// These functions use typecasting to work around TypeScript limitations
+import { supabase } from '@/integrations/supabase/client';
+import { PostgrestError } from '@supabase/supabase-js';
+import { LogEntry } from '@/types/database.types';
 
 /**
- * Get guardians for a student by student ID
+ * Logs an error to the database
+ * @param message Error message
+ * @param metadata Additional metadata
  */
-export async function getGuardiansForStudent(studentId: string): Promise<Guardian[]> {
-  const { data, error } = await supabase
-    .from('guardians')
-    .select('*')
-    .eq('student_id', studentId);
-    
-  if (error) {
-    console.error("Error fetching guardians:", error);
+export const logErrorToDatabase = async (
+  message: string,
+  metadata?: Record<string, any>
+): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('logs')
+      .insert({
+        message,
+        level: 'error',
+        metadata,
+        timestamp: new Date().toISOString(),
+      });
+
+    if (error) {
+      console.error('Error logging to database:', error);
+    }
+  } catch (err) {
+    console.error('Exception logging to database:', err);
+  }
+};
+
+/**
+ * Logs information to the database
+ * @param message Info message
+ * @param metadata Additional metadata
+ */
+export const logInfoToDatabase = async (
+  message: string,
+  metadata?: Record<string, any>
+): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('logs')
+      .insert({
+        message,
+        level: 'info',
+        metadata,
+        timestamp: new Date().toISOString(),
+      });
+
+    if (error) {
+      console.error('Error logging to database:', error);
+    }
+  } catch (err) {
+    console.error('Exception logging to database:', err);
+  }
+};
+
+/**
+ * Fetches recent logs from the database
+ * @param limit Number of logs to fetch
+ * @returns Array of log entries
+ */
+export const fetchRecentLogs = async (limit: number = 50): Promise<LogEntry[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('logs')
+      .select('*')
+      .order('timestamp', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('Error fetching logs:', error);
+      return [];
+    }
+
+    return data as LogEntry[];
+  } catch (err) {
+    console.error('Exception fetching logs:', err);
     return [];
   }
-  
-  // Use type assertion to convert the result
-  return data as unknown as Guardian[];
-}
+};
 
 /**
- * Get a guardian by ID
+ * Fetches logs by level from the database
+ * @param level Log level to fetch
+ * @param limit Number of logs to fetch
+ * @returns Array of log entries
  */
-export async function getGuardianById(guardianId: string): Promise<Guardian | null> {
-  const { data, error } = await supabase
-    .from('guardians')
-    .select('*')
-    .eq('id', guardianId)
-    .single();
-    
-  if (error) {
-    console.error("Error fetching guardian:", error);
-    return null;
-  }
-  
-  // Use type assertion to convert the result
-  return data as unknown as Guardian;
-}
+export const fetchLogsByLevel = async (
+  level: string,
+  limit: number = 50
+): Promise<LogEntry[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('logs')
+      .select('*')
+      .eq('level', level)
+      .order('timestamp', { ascending: false })
+      .limit(limit);
 
-/**
- * Add a log entry
- */
-export async function addLogEntry(logEntry: LogEntry): Promise<boolean> {
-  const { error } = await supabase
-    .from('logs')
-    .insert(logEntry);
-    
-  if (error) {
-    console.error("Error adding log entry:", error);
-    return false;
-  }
-  
-  return true;
-}
+    if (error) {
+      console.error('Error fetching logs:', error);
+      return [];
+    }
 
-/**
- * Update a location for a student
- */
-export async function updateLocation(
-  studentId: string, 
-  latitude: number, 
-  longitude: number,
-  accuracy?: number,
-  altitude?: number
-): Promise<boolean> {
-  const { error } = await supabase
-    .from('location_updates')
-    .insert({
-      student_id: studentId,
-      latitude,
-      longitude,
-      accuracy,
-      altitude,
-      timestamp: new Date().toISOString()
-    });
-    
-  if (error) {
-    console.error("Error updating location:", error);
-    return false;
+    return data as LogEntry[];
+  } catch (err) {
+    console.error('Exception fetching logs:', err);
+    return [];
   }
-  
-  return true;
-}
-
-/**
- * Check if email exists in guardians
- */
-export async function checkExistingGuardianEmail(
-  studentId: string, 
-  email: string
-): Promise<boolean> {
-  const { data, error } = await supabase
-    .from('guardians')
-    .select('id')
-    .eq('student_id', studentId)
-    .eq('email', email.toLowerCase().trim());
-    
-  if (error) {
-    console.error("Error checking guardian email:", error);
-    return false;
-  }
-  
-  return (data?.length || 0) > 0;
-}
+};

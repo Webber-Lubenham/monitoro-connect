@@ -22,15 +22,17 @@ export const findUserByEmail = async (email: string): Promise<string | null> => 
     
     // Primeiro: verificar diretamente nos registros de autenticação
     try {
-      const { data: authUsers } = await supabase.auth.admin.listUsers({
-        filter: {
-          email: normalizedEmail
-        }
-      });
+      // Note: Instead of using invalid filter property, query differently
+      const { data: usersData, error: usersError } = await supabase.auth.admin.listUsers();
       
-      if (authUsers?.users && authUsers.users.length > 0) {
-        console.log('Usuário encontrado no sistema de autenticação:', authUsers.users[0].id);
-        return authUsers.users[0].id;
+      if (usersError) {
+        console.log('Admin API error:', usersError);
+      } else if (usersData?.users) {
+        const matchingUser = usersData.users.find(u => u.email?.toLowerCase() === normalizedEmail);
+        if (matchingUser) {
+          console.log('Usuário encontrado no sistema de autenticação:', matchingUser.id);
+          return matchingUser.id;
+        }
       }
     } catch (adminError) {
       console.log('Admin API não disponível ou erro:', adminError);
