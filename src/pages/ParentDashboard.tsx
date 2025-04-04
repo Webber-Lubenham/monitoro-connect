@@ -1,40 +1,34 @@
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { MapPin, Bell, LogOut, Users, Clock } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { useAuth } from "@/providers/AuthProvider";
-import { useNavigate } from "react-router-dom";
 
 const ParentDashboard = () => {
   const [children, setChildren] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { user } = useAuth();
 
   useEffect(() => {
-    const fetchChildren = async () => {
+    const checkSession = async () => {
       try {
-        setLoading(true);
-
-        if (!user) {
-          console.error("No user found");
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          window.location.href = '/';
           return;
         }
         
-        // Fetch profile data
-        console.log("Fetching children for parent:", user.id);
-        
-        // We need to update this to fetch from a proper table in your database
-        // This is just a placeholder
+        // Fetch children data for this parent
         const { data, error } = await supabase
-          .from('profiles')
+          .from('children')
           .select('*')
-          .eq('role', 'student');
+          .eq('parent_id', session.user.id);
           
         if (error) {
           console.error("Error fetching children:", error);
@@ -53,8 +47,28 @@ const ParentDashboard = () => {
       }
     };
 
-    fetchChildren();
-  }, [user, toast]);
+    checkSession();
+  }, [navigate, toast]);
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast({
+        title: "Saindo do sistema",
+        description: "Você será redirecionado em instantes...",
+      });
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1000);
+    } catch (error) {
+      console.error("Error signing out:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível fazer logout.",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -69,6 +83,10 @@ const ParentDashboard = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">Painel do Responsável</h1>
+          <Button variant="outline" onClick={handleLogout} className="flex items-center gap-2">
+            <LogOut className="h-4 w-4" />
+            Sair
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -132,7 +150,7 @@ const ParentDashboard = () => {
                 <Card key={child.id} className="p-4 hover:bg-gray-50">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="font-medium">{child.first_name} {child.last_name}</h3>
+                      <h3 className="font-medium">{child.name}</h3>
                       <p className="text-sm text-gray-500">
                         {child.grade || "Série não informada"} • {child.school_id ? "Escola registrada" : "Escola não informada"}
                       </p>

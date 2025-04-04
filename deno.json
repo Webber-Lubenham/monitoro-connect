@@ -6,7 +6,9 @@
   },
   "nodeModulesDir": "auto",
   "compilerOptions": {
-    "lib": ["deno.window", "esnext"]
+    "lib": ["deno.window", "deno.ns", "esnext"],
+    "strict": true,
+    "types": ["deno"]
   },
   "tasks": {
     "dev": "deno run --allow-net --allow-env --allow-read server.ts"

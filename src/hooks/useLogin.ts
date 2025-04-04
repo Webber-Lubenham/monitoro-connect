@@ -1,8 +1,9 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { toast as sonnerToast } from "sonner";
 
 interface DebugInfo {
   profileCheck?: {
@@ -42,16 +43,6 @@ export const useLogin = () => {
 
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!email || !password) {
-      toast({
-        variant: "destructive",
-        title: "Campos obrigatórios",
-        description: "Por favor, preencha o email e a senha.",
-      });
-      return;
-    }
-    
     setIsLoading(true);
     setDebugInfo(null);
     
@@ -66,7 +57,7 @@ export const useLogin = () => {
       // Log pre-authentication state
       console.log('Starting authentication process');
       
-      // Directly attempt authentication without checking profiles table first
+      // Try to sign in directly with Supabase Auth
       const { data, error } = await supabase.auth.signInWithPassword({
         email: normalizedEmail,
         password,
@@ -74,6 +65,7 @@ export const useLogin = () => {
 
       if (debugMode) {
         setDebugInfo((prev: DebugInfo | null) => ({ ...prev ?? {}, loginAttempt: { data, error } }));
+        console.log('Auth result:', { data, error });
       }
 
       if (error) {
@@ -89,18 +81,45 @@ export const useLogin = () => {
             title: "Email não confirmado",
             description: "Por favor, verifique seu email e clique no link de confirmação antes de fazer login.",
           });
+          sonnerToast.error("Email não confirmado", "Verifique sua caixa de entrada");
         } else if (error.message.includes("Invalid login credentials")) {
           toast({
             variant: "destructive",
             title: "Credenciais inválidas",
             description: "Email ou senha incorretos. Verifique suas informações e tente novamente.",
           });
+          sonnerToast.error("Email ou senha incorretos");
+          
+          // Verificar conta (método simplificado que não usa API de admin)
+          console.log('Verificando conta e senha...');
+          
+          try {
+            // Tenta verificar se o email existe usando um método mais simples
+            const { data: usersData, error: profileError } = await supabase
+              .from('profiles')
+              .select('id, email')
+              .eq('email', normalizedEmail)
+              .maybeSingle();
+            
+            if (profileError) {
+              console.error('Erro ao verificar perfil:', profileError);
+            } else if (usersData) {
+              console.log('Email encontrado na base de dados, senha incorreta');
+              sonnerToast.error("Senha incorreta", "Verifique sua senha e tente novamente");
+            } else {
+              console.log('Email não encontrado na base de dados');
+              sonnerToast.error("Conta não encontrada", "Este email não está cadastrado");
+            }
+          } catch (checkError) {
+            console.log('Erro ao verificar email:', checkError);
+          }
         } else {
           toast({
             variant: "destructive",
             title: "Erro no login",
             description: `Ocorreu um erro: ${error.message}`,
           });
+          sonnerToast.error(`Erro: ${error.message}`);
         }
         
         // If too many login attempts, suggest password reset
@@ -109,6 +128,7 @@ export const useLogin = () => {
             title: "Muitas tentativas de login",
             description: "Esqueceu sua senha? Tente recuperá-la clicando em 'Esqueceu sua senha?'",
           });
+          sonnerToast.info("Muitas tentativas", "Tente recuperar sua senha");
         }
         
         setIsLoading(false);
@@ -129,6 +149,7 @@ export const useLogin = () => {
           title: "Login realizado com sucesso",
           description: "Redirecionando para o dashboard...",
         });
+        sonnerToast.success("Login realizado com sucesso");
         
         // Check user role from metadata
         const userRole = data.user.user_metadata?.role || 'student';
@@ -149,6 +170,7 @@ export const useLogin = () => {
           title: "Erro no login",
           description: "Ocorreu um erro inesperado. Por favor, tente novamente.",
         });
+        sonnerToast.error("Erro inesperado");
       }
 
     } catch (error) {
@@ -158,6 +180,7 @@ export const useLogin = () => {
         title: "Erro no login",
         description: "Ocorreu um erro inesperado. Por favor, tente novamente.",
       });
+      sonnerToast.error("Erro inesperado no login");
     } finally {
       setIsLoading(false);
     }
@@ -171,6 +194,38 @@ export const useLogin = () => {
     });
   };
 
+  // Teste da existência do usuário no banco
+  const testUserExistence = async () => {
+    if (!email) return;
+    
+    const normalizedEmail = normalizeEmail(email);
+    try {
+      console.log('Testando existência do usuário:', normalizedEmail);
+      
+      // Abordagem simplificada: verificar na tabela de perfis
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, email')
+        .eq('email', normalizedEmail)
+        .maybeSingle();
+      
+      if (profileError) {
+        console.error('Erro ao verificar perfil:', profileError);
+        sonnerToast.error("Erro ao verificar usuário");
+      } else if (profileData) {
+        console.log('Resultado da verificação (profiles):', profileData);
+        sonnerToast.success("Usuário encontrado", "Email está registrado");
+        return;
+      } else {
+        sonnerToast.error("Usuário não encontrado", "Este email não está cadastrado");
+      }
+      
+    } catch (error) {
+      console.error('Erro ao testar existência do usuário:', error);
+      sonnerToast.error("Erro ao verificar usuário");
+    }
+  };
+
   return {
     email,
     setEmail,
@@ -181,6 +236,7 @@ export const useLogin = () => {
     debugInfo,
     loginAttempts,
     handleEmailSignIn,
-    toggleDebugMode
+    toggleDebugMode,
+    testUserExistence
   };
 };

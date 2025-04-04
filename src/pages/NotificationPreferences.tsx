@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bell, Mail, Phone } from "lucide-react";
@@ -9,10 +8,8 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { safeQuery } from "@/integrations/supabase/safeQueryBuilder";
 import { NotificationPreference } from "@/types/database.types";
 
-// Interface to match the Supabase table structure
 interface SupabaseNotificationPreference {
   id: string;
   notification_type: 'whatsapp' | 'email' | 'both' | null;
@@ -42,27 +39,28 @@ const NotificationPreferences = () => {
         return;
       }
 
-      const { data: prefsData, error } = await safeQuery
+      console.log("Loading preferences for parent ID:", user.id);
+
+      const { data: prefsData, error } = await supabase
         .from('parent_notification_preferences')
         .select('*')
         .eq('parent_id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching preferences:", error);
+        throw error;
+      }
       
-      // Convert from Supabase response type to our app type, ensuring null values are handled
-      const processedPrefs: NotificationPreference[] = (prefsData || []).map((pref: any) => ({
+      console.log("Preferences data received:", prefsData);
+      
+      const processedPrefs: NotificationPreference[] = (prefsData || []).map((pref: SupabaseNotificationPreference) => ({
         id: pref.id,
-        guardian_id: user.id,
-        student_id: pref.student_id,
-        email: pref.email || '',
-        notification_type: pref.notification_type || 'email',
+        notification_type: pref.notification_type || 'email', // Default to 'email' if null
         whatsapp_number: pref.whatsapp_number || '',
+        email: pref.email,
+        student_id: pref.student_id,
         created_at: pref.created_at || '',
-        updated_at: pref.updated_at || '',
-        location_notifications: true,
-        email_notifications: true,
-        sms_notifications: true,
-        app_notifications: true
+        updated_at: pref.updated_at || ''
       }));
       
       setPreferences(processedPrefs);
@@ -78,12 +76,11 @@ const NotificationPreferences = () => {
     }
   };
 
-  const updatePreference = async (studentId: string, data: Partial<Omit<SupabaseNotificationPreference, 'id' | 'student_id'>>) => {
+  const updatePreference = async (studentId: string, data: Partial<Omit<NotificationPreference, 'id' | 'student_id'>>) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
-      // Buscar preferência atual para manter o email se não estiver sendo atualizado
       const currentPref = preferences.find(p => p.student_id === studentId);
       
       const updateData = {
@@ -94,7 +91,7 @@ const NotificationPreferences = () => {
         ...(data.whatsapp_number !== undefined && { whatsapp_number: data.whatsapp_number || null }),
       };
 
-      const { error } = await safeQuery
+      const { error } = await supabase
         .from('parent_notification_preferences')
         .upsert(updateData);
 

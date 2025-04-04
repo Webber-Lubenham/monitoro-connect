@@ -1,86 +1,129 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import { getGeoLocation } from './locationUtils';
+import { supabase } from "@/integrations/supabase/client";
+import { Location, LocationUpdateResponse } from "./locationTypes";
+import { PostgrestError } from "@supabase/supabase-js";
 
-/**
- * Save current location to database
- */
-export const saveCurrentLocation = async (): Promise<boolean> => {
+export const updateLocationInDatabase = async (
+  location: Location,
+  accuracy: number = 0
+): Promise<LocationUpdateResponse> => {
   try {
-    // Get user session
-    const { data } = await supabase.auth.getSession();
-    const session = data?.session;
+    // Get current user session
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     
-    if (!session?.user?.id) {
-      console.error('User not authenticated');
-      return false;
+    if (sessionError) {
+      console.error("Session error:", sessionError);
+      return { 
+        success: false, 
+        error: "Erro de autenticação. Por favor, faça login novamente." 
+      };
     }
-
-    // Get current location
-    const position = await getGeoLocation();
-    if (!position) {
-      console.error('Failed to get location');
-      return false;
+    
+    if (!session || !session.user) {
+      console.error("No authenticated user found");
+      return { 
+        success: false, 
+        error: "Usuário não autenticado. Por favor, faça login novamente." 
+      };
     }
-
-    // Save location to database
-    const { error } = await supabase
+    
+    const userId = session.user.id;
+    console.log(`Updating location in database for user ${userId}:`, location);
+    
+    // Insert location into database
+    const { error: insertError } = await supabase
       .from('location_updates')
       .insert({
-        student_id: session.user.id,
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-        accuracy: position.coords.accuracy ?? null,
-        altitude: position.coords.altitude ?? null,
-        timestamp: new Date().toISOString()
+        student_id: userId,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        timestamp: new Date().toISOString(),
+        accuracy: accuracy,
+        altitude: location.altitude || null,
+        speed: location.speed || null,
+        status: 'unknown'
       });
-
-    if (error) {
-      console.error('Error saving location:', error);
-      return false;
+    
+    if (insertError) {
+      handleDatabaseError(insertError);
+      return { 
+        success: false, 
+        error: `Erro ao salvar localização: ${insertError.message}` 
+      };
     }
-
-    return true;
+    
+    // Check for guardians
+    await verifyGuardians(userId);
+    
+    return { success: true };
   } catch (error) {
-    console.error('Exception saving location:', error);
-    return false;
+    console.error("Exception in updateLocationInDatabase:", error);
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+    return { 
+      success: false, 
+      error: `Exceção ao atualizar localização: ${errorMessage}` 
+    };
   }
 };
 
-/**
- * Update location in database
- * Simplified function called from position handler
- */
-export const updateLocationInDatabase = async (
-  location: { latitude: number; longitude: number; },
-  accuracy: number
-): Promise<{success: boolean, error?: string}> => {
+const verifyGuardians = async (userId: string): Promise<void> => {
   try {
-    // Get user session
-    const { data } = await supabase.auth.getSession();
-    const session = data?.session;
+    const { data: guardians, error } = await supabase
+      .from('guardians')
+      .select('*')
+      .eq('student_id', userId);
     
-    if (!session?.user?.id) {
-      return { success: false, error: 'User not authenticated' };
-    }
-
-    const { error } = await supabase
-      .from('location_updates')
-      .insert({
-        student_id: session.user.id,
-        latitude: location.latitude,
-        longitude: location.longitude,
-        accuracy: accuracy,
-        timestamp: new Date().toISOString()
-      });
-
     if (error) {
-      return { success: false, error: error.message };
+      console.error("Error checking guardians:", error);
+      return;
     }
-
-    return { success: true };
+    
+    if (!guardians || guardians.length === 0) {
+      console.warn("No guardians found for student ID:", userId);
+    } else {
+      console.log(`Found ${guardians.length} guardians for student ID:`, userId);
+    }
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return { success: false, error: errorMessage };
+    console.error("Exception checking guardians:", error);
+  }
+};
+
+const handleDatabaseError = (error: PostgrestError): void => {
+  console.error("Database error:", error);
+  
+  // Analyze specific error codes for better feedback
+  if (error.code === "23505") { // Unique constraint violation
+    console.log("Duplicate entry detected");
+  } else if (error.code === "23503") { // Foreign key constraint violation
+    console.log("Referenced record doesn't exist");
+  } else if (error.code === "42P01") { // Undefined table
+    console.log("Table does not exist");
+  } else if (error.code?.startsWith("42")) { // Syntax or permission error
+    console.log("SQL syntax or permission error");
+  } else if (error.code?.startsWith("28")) { // Authentication error
+    console.log("Authentication error");
+  }
+};
+
+export const getStudentLocationStatus = async (
+  studentId: string
+): Promise<'in_class' | 'in_transit' | 'unknown'> => {
+  try {
+    const { data, error } = await supabase
+      .from('location_updates')
+      .select('status')
+      .eq('student_id', studentId)
+      .order('timestamp', { ascending: false })
+      .limit(1)
+      .single();
+    
+    if (error || !data) {
+      return 'unknown';
+    }
+    
+    return data.status as 'in_class' | 'in_transit' | 'unknown' || 'unknown';
+  } catch (error) {
+    console.error("Error getting student location status:", error);
+    return 'unknown';
   }
 };

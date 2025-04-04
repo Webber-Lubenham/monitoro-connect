@@ -54,33 +54,3 @@ export const positionToLocation = (position: GeolocationPosition): Location => {
     timestamp: position.timestamp
   };
 };
-
-/**
- * Get the user's current geolocation
- * @returns Promise that resolves with a GeolocationPosition or null if unavailable
- */
-export const getGeoLocation = (): Promise<GeolocationPosition | null> => {
-  return new Promise((resolve) => {
-    if (!navigator.geolocation) {
-      console.error('Geolocation is not supported by this browser');
-      resolve(null);
-      return;
-    }
-    
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        resolve(position);
-      },
-      (error) => {
-        console.error('Error getting geolocation', error);
-        resolve(null);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
-      }
-    );
-  });
-};
-

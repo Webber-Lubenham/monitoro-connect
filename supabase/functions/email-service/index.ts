@@ -1,55 +1,56 @@
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { handleEmailRequest } from "./handlers/requestHandler.ts";
-import { getDynamicCorsHeaders } from "../_shared/cors.ts";
+import { corsHeaders, getDynamicCorsHeaders } from "../_shared/cors.ts";
 
 // Serve with proper CORS handling
 serve(async (req) => {
-  // Get request details
+  // Get the request origin for CORS
   const origin = req.headers.get('origin');
   const method = req.method;
   
-  // Log request for debugging
-  console.log('Request received in email-service:', method, req.url, 'Origin:', origin);
+  console.log(`Email-service request received: ${method} from ${origin || 'unknown origin'}`);
   
   // Get appropriate CORS headers based on origin
-  const corsHeaders = getDynamicCorsHeaders(origin);
+  const dynamicHeaders = getDynamicCorsHeaders(origin);
   
   // Handle CORS preflight requests
   if (method === 'OPTIONS') {
-    console.log('Handling OPTIONS preflight request from origin:', origin);
+    console.log('Handling OPTIONS preflight request');
     return new Response(null, { 
       status: 204,
-      headers: corsHeaders 
+      headers: dynamicHeaders
     });
   }
   
   try {
-    // Forward to the handler function
+    // Handle the actual request
     const response = await handleEmailRequest(req);
     
-    // Ensure all responses have CORS headers
+    // Add CORS headers to response
     const headers = new Headers(response.headers);
-    Object.entries(corsHeaders).forEach(([key, value]) => {
+    Object.entries(dynamicHeaders).forEach(([key, value]) => {
       headers.set(key, value);
     });
-    
-    // Return response with CORS headers
+
     return new Response(response.body, {
       status: response.status,
       statusText: response.statusText,
       headers: headers
     });
   } catch (error) {
-    console.error('Unhandled error in email-service:', error);
+    console.error('Error in email-service:', error);
     return new Response(
-      JSON.stringify({ 
-        success: false, 
+      JSON.stringify({
+        success: false,
         error: error instanceof Error ? error.message : String(error)
       }),
-      { 
-        status: 500, 
-        headers: corsHeaders
+      {
+        status: 500,
+        headers: {
+          ...dynamicHeaders,
+          'Content-Type': 'application/json'
+        }
       }
     );
   }

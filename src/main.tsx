@@ -1,27 +1,18 @@
 
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { RouterProvider, createBrowserRouter } from 'react-router-dom';
-import { routes } from './routes';
-import { supabase } from './lib/supabase';
-import './index.css';
+import { BrowserRouter } from 'react-router-dom';
 import App from './App';
+import { initializeAuth } from './config/auth';
+import './index.css';
 
-// Initialize Supabase auth listener
-supabase.auth.onAuthStateChange((event, session) => {
-  console.log('Auth state changed:', event, session?.user?.id);
-  
-  if (event === 'SIGNED_OUT') {
-    // Clear all storage on sign out for clean state
-    localStorage.clear();
-  }
-});
-
-// Create router with our routes
-const router = createBrowserRouter(routes);
+// Initialize auth once at application startup
+initializeAuth();
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
   </React.StrictMode>
 );

@@ -1,160 +1,236 @@
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/providers/AuthProvider';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Link } from 'react-router-dom';
+import { Shield, User, UserPlus } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useToast } from '@/components/ui/use-toast';
-import { Mail, Loader2 } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+
+const signupSchema = z.object({
+  firstName: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
+  lastName: z.string().min(2, 'Sobrenome deve ter pelo menos 2 caracteres'),
+  email: z.string().email('Email inválido'),
+  password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
+  confirmPassword: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
+  role: z.enum(['student', 'guardian']),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'As senhas não conferem',
+  path: ['confirmPassword'],
+});
+
+type SignupFormValues = z.infer<typeof signupSchema>;
 
 const Signup = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { signUp } = useAuth();
-  const { toast } = useToast();
-  const navigate = useNavigate();
+  const auth = useAuth();
+  const { signUp } = auth;
+  const isLoading = auth.isLoading ?? false;
+  const [step, setStep] = useState(1);
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (password !== confirmPassword) {
-      toast({
-        title: 'Senhas não conferem',
-        description: 'Por favor, verifique se as senhas estão iguais.',
-        variant: 'destructive',
-      });
+  const form = useForm<SignupFormValues>({
+    resolver: zodResolver(signupSchema),
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      role: 'student',
+    },
+  });
+
+  const onSubmit = async (values: SignupFormValues) => {
+    if (step === 1) {
+      setStep(2);
       return;
     }
 
-    if (password.length < 6) {
-      toast({
-        title: 'Senha muito curta',
-        description: 'A senha deve ter pelo menos 6 caracteres.',
-        variant: 'destructive',
+    if (signUp) {
+      await signUp(values.email, values.password, {
+        first_name: values.firstName,
+        last_name: values.lastName,
+        role: values.role,
       });
-      return;
-    }
-
-    try {
-      setLoading(true);
-      
-      // Call the signUp function provided by the auth context
-      const { error } = await signUp(email, password);
-      
-      if (error) {
-        console.error('Signup error:', error);
-        
-        let errorMessage = 'Erro ao criar conta. Tente novamente.';
-        
-        if (error.message === 'User already registered') {
-          errorMessage = 'Este email já está registrado. Tente fazer login.';
-        }
-        
-        toast({
-          title: 'Erro no cadastro',
-          description: errorMessage,
-          variant: 'destructive',
-        });
-        
-        return;
-      }
-      
-      // Successful signup
-      toast({
-        title: 'Cadastro realizado com sucesso',
-        description: 'Verifique seu email para confirmar sua conta.',
-      });
-      
-      // Redirect to email verification page
-      navigate('/email-verification', { state: { email } });
-      
-    } catch (error) {
-      console.error('Signup exception:', error);
-      
-      toast({
-        title: 'Erro no cadastro',
-        description: 'Ocorreu um erro inesperado. Tente novamente mais tarde.',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
     }
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Criar conta</CardTitle>
-          <CardDescription>
-            Digite seu email e senha para criar uma conta
+        <CardHeader className="space-y-2 flex flex-col items-center">
+          <div className="h-12 w-12 bg-monitor-500 rounded-lg flex items-center justify-center mb-2">
+            <UserPlus className="h-6 w-6 text-white" />
+          </div>
+          <CardTitle className="text-2xl font-bold text-center">Cadastro</CardTitle>
+          <CardDescription className="text-center">
+            {step === 1 ? 'Crie sua conta no Monitor Connect' : 'Escolha o tipo de conta'}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSignup}>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {step === 1 ? (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="firstName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome</FormLabel>
+                          <FormControl>
+                            <Input placeholder="João" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="lastName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Sobrenome</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Silva" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input placeholder="seu@email.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Senha</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="******" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirmar Senha</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="******" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              ) : (
+                <FormField
+                  control={form.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel>Tipo de conta</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          className="flex flex-col space-y-3"
+                        >
+                          <FormItem className="flex items-center space-x-3 space-y-0 rounded-md border p-4">
+                            <FormControl>
+                              <RadioGroupItem value="student" />
+                            </FormControl>
+                            <div className="space-y-1 flex-1">
+                              <div className="flex items-center">
+                                <Shield className="mr-2 h-5 w-5 text-monitor-500" />
+                                <span className="font-medium">Estudante</span>
+                              </div>
+                              <p className="text-sm text-gray-500">
+                                Monitore sua localização e compartilhe com responsáveis
+                              </p>
+                            </div>
+                          </FormItem>
+                          
+                          <FormItem className="flex items-center space-x-3 space-y-0 rounded-md border p-4">
+                            <FormControl>
+                              <RadioGroupItem value="guardian" />
+                            </FormControl>
+                            <div className="space-y-1 flex-1">
+                              <div className="flex items-center">
+                                <User className="mr-2 h-5 w-5 text-monitor-500" />
+                                <span className="font-medium">Responsável</span>
+                              </div>
+                              <p className="text-sm text-gray-500">
+                                Acompanhe a localização dos estudantes sob sua responsabilidade
+                              </p>
+                            </div>
+                          </FormItem>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirm-password">Confirmar Senha</Label>
-                <Input
-                  id="confirm-password"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processando...
-                  </>
-                ) : (
-                  <>
-                    <Mail className="mr-2 h-4 w-4" />
-                    Cadastrar-se
-                  </>
-                )}
+              )}
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {step === 1 ? 'Continuar' : isLoading ? 'Cadastrando...' : 'Cadastrar'}
               </Button>
-            </div>
-          </form>
-        </CardContent>
-        <CardFooter className="flex flex-col space-y-4">
-          <div className="text-center text-sm">
-            Já tem uma conta?{' '}
-            <a
-              href="/login"
-              className="text-blue-600 hover:text-blue-800 underline"
-            >
-              Entrar
-            </a>
+              {step === 2 && (
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="w-full mt-2"
+                  onClick={() => setStep(1)}
+                >
+                  Voltar
+                </Button>
+              )}
+            </form>
+          </Form>
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Já tem uma conta?{' '}
+              <Link to="/auth/login" className="text-monitor-600 hover:underline">
+                Entrar
+              </Link>
+            </p>
           </div>
-        </CardFooter>
+        </CardContent>
       </Card>
     </div>
   );

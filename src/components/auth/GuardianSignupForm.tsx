@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -56,13 +56,10 @@ export const GuardianSignupForm = ({ token, email, onSuccess }: GuardianSignupFo
         
         console.log('Invitation data:', data);
         
-        if (!data) {
-          setError('Invitation not found or expired.');
-          setInvitationDetails(null);
-        } else if (data.used) {
+        if (data?.used) {
           setError('This invitation has already been used. Please log in normally.');
           setInvitationDetails(null);
-        } else {
+        } else if (data) {
           // Fetch student details
           const { data: studentData } = await supabase
             .from('profiles')
@@ -77,6 +74,9 @@ export const GuardianSignupForm = ({ token, email, onSuccess }: GuardianSignupFo
             studentName: studentData?.name || 'student',
             studentEmail: studentData?.email
           });
+        } else {
+          setError('Invitation not found or expired.');
+          setInvitationDetails(null);
         }
       } catch (error: any) {
         console.error('Error verifying invitation:', error);

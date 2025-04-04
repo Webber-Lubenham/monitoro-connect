@@ -1,17 +1,17 @@
 
 # Troubleshooting Guide - Sistema Monitore
 
-**Last Updated:** March 22, 2025
+**Last Updated:** April 3, 2025
 
 This guide provides troubleshooting steps for common issues encountered in the Sistema Monitore application.
 
-## Edge Function Communication Issues
+## Edge Function Deployment Issues
 
 ### Problem: "Max number of functions reached for project" Error
 
 **Error Message:**
 ```
-unexpected status 403: {"message":"Max number of functions reached for project"}
+unexpected create function status 403: {"message":"Max number of functions reached for project"}
 ```
 
 This error occurs when your Supabase project has reached the maximum number of Edge Functions allowed by your plan.
@@ -23,11 +23,13 @@ This error occurs when your Supabase project has reached the maximum number of E
 
    ```bash
    # Option 1: Using Node.js script 
-   node scripts/cleanup_edge_functions.js
+   node scripts/delete_edge_functions.js
 
    # Option 2: Using Bash script
    bash scripts/cleanup_edge_functions.sh
    ```
+
+   If you're using the Node.js script, it will ask for confirmation before proceeding.
 
 2. **Manual Cleanup (If scripts fail):**
    
@@ -50,66 +52,13 @@ This error occurs when your Supabase project has reached the maximum number of E
    - `verify-resend-config` (debugging function, no longer needed)
    - `test-resend-connection` (testing function, no longer needed)
 
-3. **Verify Function Consolidation:**
-   
-   All functionality from the removed functions has been consolidated into the `email-service` function, which now handles:
-   - Test emails
-   - Guardian notifications 
-   - Location notifications
-   - Guardian invitations
-   
-   After cleanup, only these core functions should remain:
-   - `email-service` (consolidated email function)
-   - `send-confirmation-email` (user registration emails)
-   - `send-guardian-invitation` (redirects to email-service)
-   - `get-mapbox-token` (provides mapbox token)
-   - `notify-location` (handles location notifications)
-   - `test-connectivity` (diagnostic function)
-
-4. **Redeploy After Cleanup:**
+3. **After Cleanup:**
    
    After removing redundant functions, try deploying again:
    ```bash
-   supabase functions deploy email-service
+   # Deploy the consolidated email service function
+   supabase functions deploy email-service --project-ref usnrnaxpoqmojxsfcoox
    ```
-
-### Problem: "Function not found" Error
-
-**Error Message:**
-```
-{"code":"NOT_FOUND","message":"Requested function was not found"}
-```
-
-This error occurs when the Edge Function you're trying to call doesn't exist or hasn't been deployed correctly.
-
-**Solution:**
-
-1. **Check if the function exists:**
-   
-   Go to the Supabase dashboard to verify the function exists:
-   ```
-   https://supabase.com/dashboard/project/usnrnaxpoqmojxsfcoox/functions
-   ```
-
-2. **Deploy the function if missing:**
-   
-   If the function is missing, deploy it:
-   ```bash
-   supabase functions deploy email-service
-   ```
-
-3. **Use fallback functions:**
-   
-   The application is designed to try alternative functions if `email-service` is not found:
-   - `notify-location`
-   - `send-location-email`
-   
-   Make sure at least one of these functions is deployed.
-
-4. **Manual notification fallback:**
-   
-   As a last resort, the application will offer a manual email option to users,
-   opening their default email client with pre-filled guardian information.
 
 ## CORS Errors When Accessing Edge Functions
 
@@ -118,72 +67,17 @@ This error occurs when the Edge Function you're trying to call doesn't exist or 
 - Failed network requests
 - Email notifications not being sent
 
-**Troubleshooting Steps:**
+**Solution:**
 
-1. **Check CORS Headers**
-   Make sure your Edge Functions are properly configured with CORS headers that allow your application domain:
-   ```javascript
-   // Check the CORS headers in _shared/cors.ts:
-   const allowedOrigins = [
-     'http://localhost:8080', 
-     'https://student-sentinel-hub.lovable.app',
-     'https://sistema-monitore.com.br',
-     'https://monitoro-connect.lovable.app'
-   ];
-   ```
+The CORS headers in the Edge Functions have been updated to properly allow requests from all needed domains. If you're still experiencing CORS issues after deploying the updated functions, check the following:
 
-2. **Verify OPTIONS Request Handling**
-   Ensure that your Edge Functions properly handle OPTIONS preflight requests:
-   ```javascript
-   if (req.method === 'OPTIONS') {
-     return new Response(null, {
-       status: 204,
-       headers: corsHeaders
-     });
-   }
-   ```
+1. Verify that the origin 'https://student-sentinel-hub.lovable.app' is properly included in the allowed origins
+2. Ensure the CORS preflight handler in the Edge Function is correctly implemented
+3. Check that the Edge Function is returning proper CORS headers in all responses
+
+If problems persist, see the Edge Function logs in the Supabase dashboard for more details.
 
 ## Emails Not Being Delivered
 
-If emails are failing to send or not being delivered:
-
-### Check the From Address Domain
-
-The most common issue is using `resend.dev` in the "from" address instead of your verified domain.
-
-**Incorrect:**
-```
-"from": "Sistema Monitore <noreply@resend.dev>"
-```
-
-**Correct:**
-```
-"from": "Sistema Monitore <notifications@sistema-monitore.com.br>"
-```
-
-All "from" addresses must use your verified domain (`sistema-monitore.com.br`).
-
-### Check Domain Verification Status
-
-Make sure your domain is properly verified in the Resend dashboard:
-1. Go to https://resend.com/domains
-2. Verify that `sistema-monitore.com.br` shows as "Verified"
-3. If not verified, follow the verification steps provided
-
-### Check API Key Configuration
-
-Ensure the `RESEND_API_KEY` is correctly configured in the Supabase Edge Functions secrets:
-1. Go to the Supabase dashboard > Settings > API
-2. Check that the `RESEND_API_KEY` is set and is the full, valid key
-
-### Check Edge Function Logs
-
-Examine the Supabase Edge Function logs for detailed error messages:
-1. Go to https://supabase.com/dashboard/project/usnrnaxpoqmojxsfcoox/functions/email-service/logs
-2. Look for error messages related to Resend API or email sending
-
-If problems persist after attempting these troubleshooting steps, please contact the development team with:
-- Detailed description of the issue
-- Steps to reproduce
-- Browser and device information
-- Screenshots or screen recordings if applicable
+If emails are failing to send or not being delivered, please refer to the full troubleshooting guide at:
+docs/TROUBLESHOOTING.md

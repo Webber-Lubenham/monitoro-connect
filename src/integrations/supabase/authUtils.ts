@@ -1,53 +1,99 @@
 
 import { supabase } from './client';
-import { safeQuery, safeDataExtract } from './safeQueryBuilder';
 
 /**
- * Finds a user in the database by their email address.
- * This is a safe utility that works with both the auth.users and profiles tables.
+ * Simplified interface for Supabase user to avoid type complexity
  */
-export const findUserByEmail = async (email: string): Promise<any | null> => {
+export interface SimpleSupabaseUser {
+  id: string;
+  email?: string;
+}
+
+/**
+ * Find a user by email in Supabase 
+ * Using a more robust approach that works even with partial database schema
+ */
+export const findUserByEmail = async (email: string): Promise<string | null> => {
+  if (!email) return null;
+  
   try {
-    // Instead of using admin.getUserByEmail which doesn't exist,
-    // we'll query the profiles table directly
-    const { data: profile, error: profileError } = await safeQuery
-      .from('profiles')
-      .select('*')
-      .eq('email', email)
-      .maybeSingle();
-
-    if (profileError) {
-      console.error('Error finding user by email:', profileError);
-      return null;
+    const normalizedEmail = email.toLowerCase().trim();
+    console.log('Procurando usuário pelo email:', normalizedEmail);
+    
+    // Primeiro: verificar diretamente nos registros de autenticação
+    try {
+      const { data: authUsers } = await supabase.auth.admin.listUsers({
+        filter: {
+          email: normalizedEmail
+        }
+      });
+      
+      if (authUsers?.users && authUsers.users.length > 0) {
+        console.log('Usuário encontrado no sistema de autenticação:', authUsers.users[0].id);
+        return authUsers.users[0].id;
+      }
+    } catch (adminError) {
+      console.log('Admin API não disponível ou erro:', adminError);
     }
-
-    if (profile) {
-      return profile;
+    
+    // Alternativa: verificar na tabela de perfis
+    try {
+      // Tenta obter dados da tabela de perfis com várias colunas possíveis (para flexibilidade)
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', normalizedEmail)
+        .maybeSingle();
+      
+      if (profileError) {
+        console.log('Erro ao buscar perfil:', profileError);
+      } else if (profileData) {
+        console.log('Usuário encontrado na tabela de perfis:', profileData.id);
+        return profileData.id;
+      }
+    } catch (profileQueryError) {
+      console.log('Erro na consulta de perfis:', profileQueryError);
     }
-
-    // As a final attempt, check other possible tables
+    
+    // Último recurso: Verificar usando a função get_profile_by_email
+    try {
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_profile_by_email', { 
+        email_param: normalizedEmail 
+      });
+      
+      if (rpcError) {
+        console.log('Erro na função RPC:', rpcError);
+      } else if (rpcData && rpcData.id) {
+        console.log('Usuário encontrado via RPC:', rpcData.id);
+        return rpcData.id;
+      }
+    } catch (rpcCallError) {
+      console.log('Erro ao chamar RPC:', rpcCallError);
+    }
+    
+    console.log('Usuário não encontrado com o email:', email);
     return null;
   } catch (error) {
-    console.error('Exception in findUserByEmail:', error);
+    console.error('Erro ao buscar usuário por email:', error);
     return null;
   }
 };
 
 /**
- * A safer way to get user by ID that works with multiple tables
+ * Verificar se a senha está correta para um determinado email
  */
-export const getUserById = async (userId: string): Promise<any | null> => {
+export const verifyPassword = async (email: string, password: string): Promise<boolean> => {
   try {
-    // Try to get from profiles first
-    const result = await safeQuery
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle();
-
-    return safeDataExtract(result);
+    // Testamos o login sem alterar o estado da aplicação
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.toLowerCase().trim(),
+      password
+    });
+    
+    // Se não houver erro e tivermos dados do usuário, a senha está correta
+    return !error && !!data.user;
   } catch (error) {
-    console.error('Error getting user by ID:', error);
-    return null;
+    console.error('Erro ao verificar senha:', error);
+    return false;
   }
 };

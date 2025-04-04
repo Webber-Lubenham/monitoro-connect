@@ -1,3 +1,4 @@
+
 /**
  * This script helps delete redundant edge functions to stay within the Supabase plan limits.
  * 
@@ -9,9 +10,9 @@
 import { execSync } from 'node:child_process';
 
 // Project reference ID
-const PROJECT_REF = "usnrnaxpoqmojxsfcoox";
+const PROJECT_REF = "rsvjnndhbyyxktbczlnk";  // Updated to the new project ID
 
-// List of functions that can be safely deleted as they've been consolidated
+// List of functions to delete
 const FUNCTIONS_TO_DELETE = [
   "debug-email",
   "diagnose-email",
@@ -22,11 +23,20 @@ const FUNCTIONS_TO_DELETE = [
   "test-location-email",
   "send-location-email",
   "verify-resend-config",
-  "test-resend-connection"
+  "test-resend-connection",
+  "direct-email-test",
+  "send-test-email",
+  "send-email"
 ];
 
 async function main() {
   console.log("\n🧹 Edge Functions Cleanup Tool 🧹\n");
+  
+  const confirmation = await askForConfirmation("Are you sure you want to delete these functions? (y/n): ");
+  if (!confirmation) {
+    console.log("Operation cancelled.");
+    process.exit(0);
+  }
   
   for (const func of FUNCTIONS_TO_DELETE) {
     try {
@@ -38,6 +48,17 @@ async function main() {
       console.error(`❌ Failed to delete ${func}: ${error.message}\n`);
     }
   }
+}
+
+// Helper function to ask for confirmation
+function askForConfirmation(question) {
+  return new Promise((resolve) => {
+    process.stdout.write(question);
+    process.stdin.once('data', (data) => {
+      const answer = data.toString().trim().toLowerCase();
+      resolve(answer === 'y' || answer === 'yes');
+    });
+  });
 }
 
 main().catch(error => {

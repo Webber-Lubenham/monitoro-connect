@@ -1,72 +1,134 @@
 
-import { safeQuery } from '@/integrations/supabase/safeQueryBuilder';
-import { getAuthHeaders } from '@/integrations/supabase/client';
-import { NotificationResult } from './types';
+import { supabase } from '@/integrations/supabase/client';
+import { NotificationResult, NotificationPayload } from './types';
+import { logNotification } from './databaseUtils';
+import { useFallbackNotification } from './useFallbackNotification';
 
 /**
- * Sends a notification via the edge function
+ * Sends notification using the Edge Function
  */
-export const sendEdgeFunctionNotification = async (notificationData: any): Promise<NotificationResult> => {
-  try {
-    const authHeaders = await getAuthHeaders();
-    
-    // Call the edge function
-    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-notification`, {
-      method: 'POST',
-      headers: authHeaders,
-      body: JSON.stringify(notificationData),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Edge function error: ${errorText}`);
-    }
-
-    const result = await response.json();
-    return {
-      success: true,
-      data: result
-    };
-  } catch (error) {
-    console.error('Error in sendEdgeFunctionNotification:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
-    };
-  }
-};
-
-/**
- * Sends a bulk notification to multiple guardians
- */
-export const sendBulkNotifications = async (
-  studentId: string,
-  guardianIds: string[],
-  notificationType: string,
-  message: string
+export const sendEdgeFunctionNotification = async (
+  notificationData: NotificationPayload
 ): Promise<NotificationResult> => {
   try {
-    // Prepare notification entries
-    const notificationEntries = guardianIds.map(guardianId => ({
-      student_id: studentId,
-      guardian_id: guardianId,
-      notification_type: notificationType,
-      status: 'pending',
-      message: message
-    }));
-
-    // Insert all notifications
-    const { error } = await safeQuery.insert('notification_logs', notificationEntries);
-    
-    if (error) {
-      throw new Error(`Failed to create notification records: ${error.message}`);
+    // Validate payload structure
+    if (!notificationData || typeof notificationData !== 'object') {
+      throw new Error('Invalid payload structure');
     }
 
+    console.log('Sending notification using email-service function:', notificationData);
+    
+    // Get the current origin for CORS headers
+    const origin = window.location.origin;
+    
+    // Try to call the consolidated email-service function
+    try {
+      const response = await supabase.functions.invoke('email-service', {
+        body: {
+          type: 'location-notification',
+          data: notificationData
+        },
+        headers: {
+          'Content-Type': 'application/json',
+          'Origin': origin,
+          'X-Client-Info': 'monitore-app/1.0.0'
+        }
+      });
+      
+      console.log('Response from email-service function:', response);
+      
+      if (response.error) {
+        console.error('Edge Function error:', response.error);
+        // Will try fallback below
+      } else if (response.data?.success) {
+        // Success case - log notification and return
+        await logNotification(
+          notificationData.guardianEmail,
+          notificationData.studentEmail,
+          'location',
+          { 
+            location: { 
+              lat: notificationData.latitude, 
+              lng: notificationData.longitude 
+            } 
+          },
+          'sent'
+        );
+        
+        return {
+          success: true,
+          message: 'Notification sent successfully'
+        };
+      }
+    } catch (edgeFunctionError) {
+      console.error('Failed to call edge function:', edgeFunctionError);
+      // Will try fallback below
+    }
+    
+    // If we get here, the edge function call failed - try direct fallback
+    return await sendFallbackNotificationDirectly(notificationData);
+    
+  } catch (error) {
+    console.error('Error sending notification:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return {
-      success: true
+      success: false,
+      error: errorMessage
+    };
+  }
+};
+
+/**
+ * Sends a fallback notification using client-side methods
+ */
+export const sendFallbackNotificationDirectly = async (
+  notificationData: NotificationPayload
+): Promise<NotificationResult> => {
+  try {
+    // Since useFallbackNotification is a hook, we need to create a function
+    // that doesn't require the hook to be used in the component context
+    const { sendFallbackEmail } = useFallbackNotification();
+    
+    const {
+      guardianEmail,
+      guardianName,
+      studentName,
+      studentEmail,
+      latitude,
+      longitude,
+      timestamp = new Date().toISOString(),
+      mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`,
+      isEmergency = false
+    } = notificationData;
+    
+    // Format the body with the student's location information
+    const formattedTime = new Date(timestamp).toLocaleString('pt-BR');
+    const body = `Olá ${guardianName},\n\n${studentName} compartilhou sua localização atual com você.\n\nVocê pode visualizar a localização clicando no link abaixo.`;
+    
+    // Try to send the email via the client-side fallback
+    const emailSent = sendFallbackEmail({
+      to: guardianEmail,
+      subject: `Localização atual de ${studentName} - Sistema Monitore`,
+      body,
+      studentName,
+      guardianName,
+      latitude,
+      longitude
+    });
+    
+    if (emailSent) {
+      return {
+        success: true,
+        message: 'Fallback notification method used successfully'
+      };
+    }
+    
+    return {
+      success: false,
+      error: 'All notification methods failed'
     };
   } catch (error) {
-    console.error('Error sending bulk notifications:', error);
+    console.error('Error in fallback notification:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : String(error)
@@ -75,38 +137,7 @@ export const sendBulkNotifications = async (
 };
 
 /**
- * Gets guardian emails for a student
- */
-export const getGuardianEmails = async (studentId: string): Promise<string[]> => {
-  try {
-    const { data: guardians, error } = await safeQuery
-      .from('guardians')
-      .select('*')
-      .eq('student_id', studentId);
-    
-    if (error) {
-      throw new Error(`Failed to fetch guardians: ${error.message}`);
-    }
-    
-    if (!guardians || guardians.length === 0) {
-      console.log(`No guardians found for student ${studentId}`);
-      return [];
-    }
-    
-    // Extract guardian emails, ensuring they are valid
-    const emails = guardians
-      .filter(guardian => guardian.email && guardian.email.includes('@'))
-      .map(guardian => guardian.email);
-    
-    return emails;
-  } catch (error) {
-    console.error('Error getting guardian emails:', error);
-    return [];
-  }
-};
-
-/**
- * Send a fallback notification when the main notification method fails
+ * Sends a fallback notification using a different Edge Function
  */
 export const sendFallbackNotification = async (
   guardianEmail: string,
@@ -118,41 +149,77 @@ export const sendFallbackNotification = async (
   timestamp: string
 ): Promise<NotificationResult> => {
   try {
-    // Create a Google Maps link
+    console.log('Sending fallback notification using email-service function');
+    
+    // Get the current origin for CORS headers
+    const origin = window.location.origin;
+    
+    // Create map URL for the location
     const mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
     
-    // Prepare the notification log
-    const notificationLogEntry = {
-      recipient_email: guardianEmail,
-      student_id: studentEmail,
-      notification_type: 'location_fallback',
-      status: 'sent',
-      message: `Fallback location notification for ${studentName} at ${timestamp}`,
-      metadata: {
-        latitude,
-        longitude,
-        timestamp,
-        mapUrl,
-        method: 'fallback'
-      },
-      sent_at: new Date().toISOString()
-    };
-    
-    // Log the notification attempt
-    const { error } = await safeQuery.insert('notification_logs', [notificationLogEntry]);
-    
-    if (error) {
-      console.error('Error logging fallback notification:', error);
+    // First try using the email-service function
+    try {
+      const fallbackResponse = await supabase.functions.invoke('email-service', {
+        body: {
+          type: 'guardian-notification',
+          data: {
+            guardianEmail,
+            guardianName,
+            studentName,
+            studentEmail,
+            latitude,
+            longitude,
+            timestamp,
+            locationType: 'test'
+          }
+        },
+        headers: {
+          'Content-Type': 'application/json',
+          'Origin': origin,
+          'X-Client-Info': 'monitore-app/1.0.0'
+        }
+      });
+      
+      console.log('Fallback notification response:', fallbackResponse);
+      
+      if (fallbackResponse.data?.success) {
+        // Log successful fallback notification
+        await logNotification(
+          guardianEmail,
+          studentEmail,
+          'location_fallback',
+          {
+            latitude,
+            longitude,
+            timestamp,
+            method: 'fallback'
+          },
+          'sent'
+        );
+        
+        return { success: true };
+      }
+    } catch (edgeFunctionError) {
+      console.error('Failed to call fallback edge function:', edgeFunctionError);
     }
     
-    return {
-      success: true
-    };
-  } catch (error) {
-    console.error('Error in fallback notification:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
+    // If edge function fails, try client-side fallback with all required properties
+    return await sendFallbackNotificationDirectly({
+      guardianEmail,
+      guardianName,
+      studentName,
+      studentEmail,
+      latitude,
+      longitude,
+      timestamp,
+      mapUrl,
+      isEmergency: false
+    });
+  } catch (fallbackError) {
+    console.error(`Fallback notification failed:`, fallbackError);
+    return { 
+      success: false, 
+      error: fallbackError instanceof Error ? fallbackError.message : String(fallbackError)
     };
   }
 };
