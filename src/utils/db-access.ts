@@ -1,6 +1,7 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { PostgrestError } from '@supabase/supabase-js';
-import { Profile } from '@/types/database.types';
+import { Guardian, Profile } from '@/types/database.types';
 
 /**
  * Fetches a user's profile from the profiles table
@@ -102,7 +103,7 @@ export async function getGuardians(studentId: string): Promise<Guardian[]> {
       return [];
     }
     
-    return data as unknown as Guardian[];
+    return data as Guardian[];
   } catch (error) {
     console.error("Exception fetching guardians:", error);
     return [];

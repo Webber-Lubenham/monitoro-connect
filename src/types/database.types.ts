@@ -29,7 +29,7 @@ export interface GuardianForm {
   nome: string;
   telefone: string;
   email: string;
-  is_primary?: boolean;
+  is_primary?: boolean;  // Changed from isPrimary to is_primary to match DB schema
   cpf?: string;
   whatsapp_number?: string;
   status?: string;
