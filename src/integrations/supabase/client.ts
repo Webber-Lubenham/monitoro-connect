@@ -1,8 +1,7 @@
 
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from './database.types';
-import type { SupabaseClient } from '@supabase/supabase-js';
-import { CustomStorageAPI } from './storage.ts';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from './database.types.ts';
+import { CustomStorageAPI } from './storage.ts'; // Already correct
 import { retryFetch } from './fetch-utils.ts';
 import { STORAGE_KEY } from './config.ts';
 
