@@ -18,6 +18,7 @@ export const getDynamicCorsHeaders = (origin: string | null) => {
     'https://sistema-monitore.com.br', 
     'https://www.sistema-monitore.com.br',
     'https://student-sentinel-hub.lovable.app',
+    'https://monitoro-connect.lovable.app',
     'https://monitore-connect.lovable.app',
     'https://lovable.dev',
     'https://*.lovable.app'
