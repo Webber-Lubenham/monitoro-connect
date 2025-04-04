@@ -1,6 +1,7 @@
 
 import { toast } from "@/components/ui/use-toast";
 import { ToastAction } from "@/components/ui/toast";
+import React from "react";
 
 /**
  * Creates a fallback link for manual email notification
@@ -45,10 +46,9 @@ export const showManualFallbackOption = (
     description: `Não foi possível enviar a notificação automaticamente para ${guardianName}. Você pode enviar manualmente clicando no botão abaixo.`,
     variant: "destructive",
     duration: 10000,
-    action: {
-      altText: "Enviar email manualmente",
+    action: React.createElement(ToastAction, {
       onClick: () => window.open(mailtoLink, "_blank")
-    }
+    }, "Enviar email manualmente")
   });
 };
 
@@ -65,9 +65,8 @@ export const showSuccessNotification = (
     title: "Notificação enviada com sucesso",
     description: `${guardianName} (${guardianEmail}) foi notificado sobre sua localização atual.`,
     duration: 5000,
-    action: {
-      altText: "OK",
+    action: React.createElement(ToastAction, {
       onClick: () => {}
-    }
+    }, "OK")
   });
 };

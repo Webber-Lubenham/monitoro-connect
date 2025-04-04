@@ -37,7 +37,15 @@ export const getSupabaseClient = () => {
       headers: {
         'X-Client-Info': 'monitore-app/1.0.0'
       },
-      fetch: (url: string, options: RequestInit) => retryFetch(url, options, 4, 300)
+      // Fix the fetch type issue
+      fetch: (input: RequestInfo | URL, init?: RequestInit) => {
+        if (typeof input === 'string') {
+          return retryFetch(input, init || {}, 4, 300);
+        } else {
+          // For Request or URL objects
+          return retryFetch(input.toString(), init || {}, 4, 300);
+        }
+      }
     }
   });
 

@@ -1,34 +1,31 @@
-
-import { supabase } from "@/integrations/supabase/client";
-import { Guardian, Profile } from "@/types/database.types";
-
-/**
- * A collection of type-safe database access functions
- * to work around TypeScript Supabase client limitations
- */
+import { supabase } from '@/integrations/supabase/client';
+import { PostgrestError } from '@supabase/supabase-js';
+import { Profile } from '@/types/database.types';
 
 /**
- * Get user profile by ID
+ * Fetches a user's profile from the profiles table
+ * @param userId The ID of the user
+ * @returns The user's profile data or null if no profile exists
  */
-export async function getUserProfile(userId: string): Promise<Profile | null> {
+export const getUserProfile = async (userId: string): Promise<Profile | null> => {
   try {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single();
-      
+
     if (error) {
-      console.error("Error fetching profile:", error);
+      console.error('Error fetching user profile:', error);
       return null;
     }
-    
-    return data as unknown as Profile;
-  } catch (error) {
-    console.error("Exception fetching profile:", error);
+
+    return data as Profile;
+  } catch (err) {
+    console.error('Exception fetching user profile:', err);
     return null;
   }
-}
+};
 
 /**
  * Create or update a guardian
