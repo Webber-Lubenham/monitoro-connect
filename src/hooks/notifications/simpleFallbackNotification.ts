@@ -46,9 +46,10 @@ export const showManualFallbackOption = (
     description: `Não foi possível enviar a notificação automaticamente para ${guardianName}. Você pode enviar manualmente clicando no botão abaixo.`,
     variant: "destructive",
     duration: 10000,
-    action: <ToastAction altText="Enviar email manualmente" onClick={() => window.open(mailtoLink, "_blank")}>
-      Enviar email manualmente
-    </ToastAction> as any
+    action: createElement(ToastAction, {
+      altText: "Enviar email manualmente",
+      onClick: () => window.open(mailtoLink, "_blank")
+    })
   });
 };
 
@@ -65,8 +66,9 @@ export const showSuccessNotification = (
     title: "Notificação enviada com sucesso",
     description: `${guardianName} (${guardianEmail}) foi notificado sobre sua localização atual.`,
     duration: 5000,
-    action: <ToastAction altText="OK" onClick={() => {}}>
-      OK
-    </ToastAction> as any
+    action: createElement(ToastAction, {
+      altText: "OK",
+      onClick: () => {}
+    })
   });
 };
