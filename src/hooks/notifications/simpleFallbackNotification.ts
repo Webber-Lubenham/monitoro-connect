@@ -1,7 +1,7 @@
 
 import { toast } from "@/components/ui/use-toast";
 import { ToastAction } from "@/components/ui/toast";
-import { createElement } from "react";
+import { createElement, ReactNode } from "react";
 
 /**
  * Creates a fallback link for manual email notification
@@ -41,6 +41,7 @@ export const showManualFallbackOption = (
 ): void => {
   const mailtoLink = createFallbackEmailLink(studentName, guardianEmail, latitude, longitude);
 
+  // Fix: Use a direct JSX-compatible action prop instead of createElement
   toast({
     title: "Falha ao enviar notificação",
     description: `Não foi possível enviar a notificação automaticamente para ${guardianName}. Você pode enviar manualmente clicando no botão abaixo.`,
