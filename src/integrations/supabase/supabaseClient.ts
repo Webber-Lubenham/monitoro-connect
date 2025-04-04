@@ -12,7 +12,7 @@ export const db = {
   ) => {
     return supabase.from(table) as PostgrestQueryBuilder<
       Database['public']['Tables'][T]['Row'],
-      Database['public']['Tables'][T]['Row'],
+      Database['public']['Tables'][T]['Insert'],
       unknown
     >;
   },
