@@ -6,9 +6,12 @@ import { Database } from '@/integrations/supabase/database.types';
 export interface Profile {
   id: string;
   email?: string;
-  first_name: string;
-  last_name: string;
+  first_name?: string;
+  last_name?: string;
   role?: string;
+  full_name?: string;
+  avatar_url?: string;
+  user_type?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -29,7 +32,7 @@ export interface GuardianForm {
   nome: string;
   telefone: string;
   email: string;
-  is_primary?: boolean;  // Changed from isPrimary to is_primary to match DB schema
+  is_primary?: boolean;
   cpf?: string;
   whatsapp_number?: string;
   status?: string;
@@ -60,3 +63,7 @@ export interface NotificationPreference {
 // Export other useful types from the database schema as needed
 export type LocationUpdate = Database['public']['Tables']['location_updates']['Row'];
 export type School = Database['public']['Tables']['schools']['Row'];
+export type StudentInvitation = Database['public']['Tables']['student_invitations']['Row'];
+export type Child = Database['public']['Tables']['children']['Row'];
+export type NotificationLog = Database['public']['Tables']['notification_logs']['Row'];
+export type ParentNotificationPreference = Database['public']['Tables']['parent_notification_preferences']['Row'];

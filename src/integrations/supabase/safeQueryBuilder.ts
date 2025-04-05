@@ -1,6 +1,10 @@
 
 import { PostgrestFilterBuilder, PostgrestQueryBuilder } from '@supabase/postgrest-js';
 import { supabase } from './client';
+import { Database } from './database.types';
+
+type Tables = Database['public']['Tables'];
+type TableNames = keyof Tables;
 
 /**
  * A wrapper for Supabase that allows safely querying tables that may not exist in 
@@ -13,7 +17,6 @@ export const safeQuery = {
    * @returns A query builder for the specified table
    */
   from: <T = any>(table: string): PostgrestQueryBuilder<any, any, T, any> => {
-    // @ts-ignore - We're intentionally bypassing type checking
     return supabase.from(table);
   },
 
@@ -24,7 +27,6 @@ export const safeQuery = {
    * @returns A filter builder for the insert operation
    */
   insert: <T = any>(table: string, data: any): PostgrestFilterBuilder<any, any, T, any> => {
-    // @ts-ignore - We're intentionally bypassing type checking
     return supabase.from(table).insert(data);
   },
 
@@ -35,7 +37,6 @@ export const safeQuery = {
    * @returns A filter builder for the update operation
    */
   update: <T = any>(table: string, data: any): PostgrestFilterBuilder<any, any, T, any> => {
-    // @ts-ignore - We're intentionally bypassing type checking
     return supabase.from(table).update(data);
   },
 
@@ -45,7 +46,6 @@ export const safeQuery = {
    * @returns A filter builder for the delete operation
    */
   delete: <T = any>(table: string): PostgrestFilterBuilder<any, any, T, any> => {
-    // @ts-ignore - We're intentionally bypassing type checking
     return supabase.from(table).delete();
   },
 
@@ -56,7 +56,6 @@ export const safeQuery = {
    * @returns A filter builder for the select operation
    */
   select: <T = any>(table: string, columns: string): PostgrestFilterBuilder<any, any, T, any> => {
-    // @ts-ignore - We're intentionally bypassing type checking
     return supabase.from(table).select(columns);
   }
 };

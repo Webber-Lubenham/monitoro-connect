@@ -9,30 +9,126 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      guardians: {
+      children: {
         Row: {
           created_at: string | null
-          document_number: string | null
-          document_type: string | null
           id: string
-          phone: string
+          is_primary: boolean | null
+          parent_id: string
+          relation: string | null
+          student_id: string
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
-          document_number?: string | null
-          document_type?: string | null
-          id: string
-          phone: string
+          id?: string
+          is_primary?: boolean | null
+          parent_id: string
+          relation?: string | null
+          student_id: string
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          parent_id?: string
+          relation?: string | null
+          student_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      guardian_students: {
+        Row: {
+          created_at: string | null
+          guardian_id: string
+          id: string
+          is_approved: boolean | null
+          relation_type: string
+          student_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          guardian_id: string
+          id?: string
+          is_approved?: boolean | null
+          relation_type: string
+          student_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          guardian_id?: string
+          id?: string
+          is_approved?: boolean | null
+          relation_type?: string
+          student_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      guardians: {
+        Row: {
+          cpf: string | null
+          created_at: string | null
+          document_number: string | null
+          document_type: string | null
+          email: string | null
+          guardian_id: string | null
+          id: string
+          invitation_sent_at: string | null
+          is_primary: boolean | null
+          nome: string | null
+          phone: string
+          sms_number: string | null
+          status: string | null
+          student_id: string | null
+          telefone: string | null
+          temp_password: string | null
+          updated_at: string | null
+          whatsapp_number: string | null
+        }
+        Insert: {
+          cpf?: string | null
+          created_at?: string | null
           document_number?: string | null
           document_type?: string | null
-          id?: string
-          phone?: string
+          email?: string | null
+          guardian_id?: string | null
+          id: string
+          invitation_sent_at?: string | null
+          is_primary?: boolean | null
+          nome?: string | null
+          phone: string
+          sms_number?: string | null
+          status?: string | null
+          student_id?: string | null
+          telefone?: string | null
+          temp_password?: string | null
           updated_at?: string | null
+          whatsapp_number?: string | null
+        }
+        Update: {
+          cpf?: string | null
+          created_at?: string | null
+          document_number?: string | null
+          document_type?: string | null
+          email?: string | null
+          guardian_id?: string | null
+          id?: string
+          invitation_sent_at?: string | null
+          is_primary?: boolean | null
+          nome?: string | null
+          phone?: string
+          sms_number?: string | null
+          status?: string | null
+          student_id?: string | null
+          telefone?: string | null
+          temp_password?: string | null
+          updated_at?: string | null
+          whatsapp_number?: string | null
         }
         Relationships: []
       }
@@ -108,6 +204,111 @@ export type Database = {
           status?: string
           token?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      location_updates: {
+        Row: {
+          accuracy: number | null
+          altitude: number | null
+          battery_level: number | null
+          created_at: string | null
+          device_id: string | null
+          id: string
+          latitude: number
+          longitude: number
+          speed: number | null
+          status: string | null
+          student_id: string
+          timestamp: string | null
+          transport_mode: string | null
+        }
+        Insert: {
+          accuracy?: number | null
+          altitude?: number | null
+          battery_level?: number | null
+          created_at?: string | null
+          device_id?: string | null
+          id?: string
+          latitude: number
+          longitude: number
+          speed?: number | null
+          status?: string | null
+          student_id: string
+          timestamp?: string | null
+          transport_mode?: string | null
+        }
+        Update: {
+          accuracy?: number | null
+          altitude?: number | null
+          battery_level?: number | null
+          created_at?: string | null
+          device_id?: string | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          speed?: number | null
+          status?: string | null
+          student_id?: string
+          timestamp?: string | null
+          transport_mode?: string | null
+        }
+        Relationships: []
+      }
+      logs: {
+        Row: {
+          id: string
+          level: string
+          message: string
+          metadata: Json | null
+          timestamp: string | null
+        }
+        Insert: {
+          id?: string
+          level?: string
+          message: string
+          metadata?: Json | null
+          timestamp?: string | null
+        }
+        Update: {
+          id?: string
+          level?: string
+          message?: string
+          metadata?: Json | null
+          timestamp?: string | null
+        }
+        Relationships: []
+      }
+      notification_logs: {
+        Row: {
+          created_at: string | null
+          guardian_id: string | null
+          id: string
+          message: string | null
+          notification_type: string
+          sent_at: string | null
+          status: string
+          student_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          guardian_id?: string | null
+          id?: string
+          message?: string | null
+          notification_type: string
+          sent_at?: string | null
+          status: string
+          student_id: string
+        }
+        Update: {
+          created_at?: string | null
+          guardian_id?: string | null
+          id?: string
+          message?: string | null
+          notification_type?: string
+          sent_at?: string | null
+          status?: string
+          student_id?: string
         }
         Relationships: []
       }
@@ -198,6 +399,42 @@ export type Database = {
         }
         Relationships: []
       }
+      parent_notification_preferences: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          notification_type: string
+          parent_id: string | null
+          student_id: string
+          updated_at: string | null
+          user_id: string | null
+          whatsapp_number: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          notification_type: string
+          parent_id?: string | null
+          student_id: string
+          updated_at?: string | null
+          user_id?: string | null
+          whatsapp_number?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          notification_type?: string
+          parent_id?: string | null
+          student_id?: string
+          updated_at?: string | null
+          user_id?: string | null
+          whatsapp_number?: string | null
+        }
+        Relationships: []
+      }
       parents: {
         Row: {
           cpf: string | null
@@ -270,24 +507,36 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string | null
+          email: string | null
+          first_name: string | null
           full_name: string
           id: string
+          last_name: string | null
+          role: string | null
           updated_at: string | null
           user_type: string
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string | null
+          email?: string | null
+          first_name?: string | null
           full_name: string
           id: string
+          last_name?: string | null
+          role?: string | null
           updated_at?: string | null
           user_type: string
         }
         Update: {
           avatar_url?: string | null
           created_at?: string | null
+          email?: string | null
+          first_name?: string | null
           full_name?: string
           id?: string
+          last_name?: string | null
+          role?: string | null
           updated_at?: string | null
           user_type?: string
         }
@@ -341,6 +590,36 @@ export type Database = {
           },
         ]
       }
+      schools: {
+        Row: {
+          address: string | null
+          created_at: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       student_invitations: {
         Row: {
           accepted: boolean | null
@@ -353,7 +632,9 @@ export type Database = {
           guardian_id: string
           id: string
           invitation_token: string
+          student_id: string | null
           temporary_password: string
+          used: boolean | null
         }
         Insert: {
           accepted?: boolean | null
@@ -366,7 +647,9 @@ export type Database = {
           guardian_id: string
           id?: string
           invitation_token: string
+          student_id?: string | null
           temporary_password: string
+          used?: boolean | null
         }
         Update: {
           accepted?: boolean | null
@@ -379,7 +662,9 @@ export type Database = {
           guardian_id?: string
           id?: string
           invitation_token?: string
+          student_id?: string | null
           temporary_password?: string
+          used?: boolean | null
         }
         Relationships: [
           {
