@@ -51,11 +51,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
       if (!error && data) {
         setProfile({
-          id: data.id,
-          first_name: data.first_name,
-          last_name: data.last_name,
-          email: data.email,
-          role: data.role
+          id: data.id as string,
+          first_name: data.first_name as string | undefined,
+          last_name: data.last_name as string | undefined,
+          email: data.email as string | undefined,
+          role: data.role as string | undefined
         });
       } else {
         console.error('Error fetching user profile:', error);

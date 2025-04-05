@@ -1,6 +1,4 @@
 
-// Define the database schema types manually until they're properly generated
-
 export type Json =
   | string
   | number
@@ -327,6 +325,29 @@ export interface Database {
           is_primary?: boolean
           created_at?: string
           updated_at?: string
+        }
+      }
+      logs: {
+        Row: {
+          id: string
+          message: string
+          level: string
+          timestamp: string
+          metadata?: Json
+        }
+        Insert: {
+          id?: string
+          message: string
+          level: string
+          timestamp?: string
+          metadata?: Json
+        }
+        Update: {
+          id?: string
+          message?: string
+          level?: string
+          timestamp?: string
+          metadata?: Json
         }
       }
     }

@@ -1,80 +1,86 @@
-import { supabase } from '@/lib/supabase';
 
-type LogLevel = 'error' | 'info' | 'debug' | 'warn';
+import { supabase } from '@/integrations/supabase/client';
+import { LogEntry } from '@/types/database.types';
 
-interface LogEntry {
-  level: LogLevel;
-  message: string;
-  timestamp: string;
-  data?: any;
-  userId?: string;
-  error?: any;
-}
+const LOG_LEVELS = {
+  debug: 0,
+  info: 1,
+  warn: 2,
+  error: 3,
+  fatal: 4
+};
 
-class Logger {
-  private async persistLog(entry: LogEntry) {
-    try {
-      const { error } = await supabase
-        .from('logs')
-        .insert([entry]);
+/**
+ * Inserts logs into the database
+ */
+export const insertLogs = async (logs: LogEntry[]): Promise<boolean> => {
+  try {
+    if (!logs || logs.length === 0) return true;
 
-      if (error) {
-        console.error('Failed to persist log:', error);
-      }
-    } catch (e) {
-      console.error('Error persisting log:', e);
+    const convertedLogs = logs.map(log => ({
+      message: log.message,
+      level: log.level,
+      timestamp: log.timestamp || new Date().toISOString(),
+      metadata: log.metadata || {}
+    }));
+
+    // Insert logs into the database
+    const { error } = await supabase
+      .from('logs')
+      .insert(convertedLogs as any);
+
+    if (error) {
+      console.error('Failed to insert logs into database:', error);
+      return false;
     }
-  }
 
-  private formatError(error: any): string {
-    if (error instanceof Error) {
-      return `${error.name}: ${error.message}\nStack: ${error.stack}`;
-    }
-    return String(error);
+    return true;
+  } catch (e) {
+    console.error('Exception in insertLogs:', e);
+    return false;
   }
+};
 
-  private createLogEntry(
-    level: LogLevel,
-    message: string,
-    data?: any,
-    error?: any
-  ): LogEntry {
-    const user = supabase.auth.getUser();
-    return {
-      level,
+/**
+ * Log a message with additional metadata
+ */
+export const logMessage = async (
+  level: string,
+  message: string,
+  metadata?: Record<string, any>
+): Promise<boolean> => {
+  try {
+    const logEntry: LogEntry = {
       message,
+      level,
       timestamp: new Date().toISOString(),
-      data: data ? JSON.stringify(data) : undefined,
-      userId: user ? (user as any).id : undefined,
-      error: error ? this.formatError(error) : undefined
+      metadata
     };
-  }
 
-  error(message: string, error?: any, data?: any) {
-    const entry = this.createLogEntry('error', message, data, error);
-    console.error(`[${entry.timestamp}] ERROR: ${message}`, error, data);
-    this.persistLog(entry);
-  }
+    // Always log to console
+    const consoleMethod = level === 'error' || level === 'fatal' 
+      ? console.error 
+      : level === 'warn' 
+        ? console.warn 
+        : console.log;
+    
+    consoleMethod(`[${level.toUpperCase()}] ${message}`, metadata || '');
 
-  warn(message: string, data?: any) {
-    const entry = this.createLogEntry('warn', message, data);
-    console.warn(`[${entry.timestamp}] WARN: ${message}`, data);
-    this.persistLog(entry);
+    // Insert into database
+    return await insertLogs([logEntry]);
+  } catch (e) {
+    console.error('Exception in logMessage:', e);
+    return false;
   }
+};
 
-  info(message: string, data?: any) {
-    const entry = this.createLogEntry('info', message, data);
-    console.info(`[${entry.timestamp}] INFO: ${message}`, data);
-    this.persistLog(entry);
-  }
-
-  debug(message: string, data?: any) {
-    if (import.meta.env.DEV) {
-      const entry = this.createLogEntry('debug', message, data);
-      console.debug(`[${entry.timestamp}] DEBUG: ${message}`, data);
-      this.persistLog(entry);
-    }
-  }
-}
-
-export const logger = new Logger();
+/**
+ * Global logger object
+ */
+export const logger = {
+  debug: (message: string, metadata?: Record<string, any>) => logMessage('debug', message, metadata),
+  info: (message: string, metadata?: Record<string, any>) => logMessage('info', message, metadata),
+  warn: (message: string, metadata?: Record<string, any>) => logMessage('warn', message, metadata),
+  error: (message: string, metadata?: Record<string, any>) => logMessage('error', message, metadata),
+  fatal: (message: string, metadata?: Record<string, any>) => logMessage('fatal', message, metadata),
+};

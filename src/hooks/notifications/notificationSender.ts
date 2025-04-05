@@ -1,189 +1,249 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { NotificationResult, NotificationPayload } from './types';
-import { logNotification } from './databaseUtils';
-import { useFallbackNotification } from './useFallbackNotification';
+import { logger } from '@/utils/logger';
+import { getGuardianById } from '@/services/guardian/fetch/guardianLookupService';
 
 /**
- * Sends notification using the Edge Function
+ * Sends a notification to a specific guardian
  */
-export const sendEdgeFunctionNotification = async (
-  notificationData: NotificationPayload
-): Promise<NotificationResult> => {
+export const sendNotificationToGuardian = async (
+  studentId: string,
+  guardianId: string,
+  message: string,
+  notificationType: string
+): Promise<boolean> => {
   try {
-    // Validate payload structure
-    if (!notificationData || typeof notificationData !== 'object') {
-      throw new Error('Invalid payload structure');
-    }
+    logger.info(`Enviando notificação para o guardião ${guardianId} do aluno ${studentId} via ${notificationType}`);
 
-    console.log('Sending notification using email-service function:', notificationData);
+    // Fetch guardian data
+    const guardian = await getGuardianById(guardianId);
+
+    if (!guardian) {
+      logger.warn(`Guardião não encontrado com ID: ${guardianId}`);
+      return false;
+    }
     
-    // Get the current origin for CORS headers
-    const origin = window.location.origin;
-    
-    // Make sure we have all required properties
-    const completeNotificationData = {
-      ...notificationData,
-      mapUrl: notificationData.mapUrl || `https://www.google.com/maps?q=${notificationData.latitude},${notificationData.longitude}`,
-      isEmergency: notificationData.isEmergency !== undefined ? notificationData.isEmergency : false,
-      timestamp: notificationData.timestamp || new Date().toISOString()
-    };
-    
-    // Try to call the edge function
-    try {
-      // Check if we should use the newer email-service or the legacy function
-      const functionName = 'email-service';
-      
-      console.log(`Attempting to call edge function: ${functionName}`);
-      
-      const response = await supabase.functions.invoke(functionName, {
-        body: {
-          type: 'location-notification',
-          data: completeNotificationData
-        },
-        headers: {
-          'Content-Type': 'application/json',
-          'Origin': origin,
-          'X-Client-Info': 'monitore-app/1.0.0'
-        }
+    // Fix the line with error
+    const guardianEmail = guardian?.email ?? '';
+
+    // Send email notification
+    if (notificationType === 'email' || notificationType === 'both') {
+      const emailPayload = {
+        to: guardianEmail,
+        subject: 'Notificação do Sistema Monitore',
+        body: message,
+      };
+
+      const { error: emailError } = await supabase.functions.invoke('send-email', {
+        body: emailPayload,
       });
-      
-      console.log(`Response from ${functionName} function:`, response);
-      
-      if (response.error) {
-        console.error('Edge Function error:', response.error);
-        
-        // Check if this is a "function not found" error
-        if (response.error.message?.includes('not found') || response.error.code === 'NOT_FOUND') {
-          console.log('Function not found, attempting to use notify-location function instead');
-          
-          // Try the legacy function as a backup
-          const legacyResponse = await supabase.functions.invoke('notify-location', {
-            body: completeNotificationData,
-            headers: {
-              'Content-Type': 'application/json',
-              'Origin': origin,
-              'X-Client-Info': 'monitore-app/1.0.0'
-            }
-          });
-          
-          if (legacyResponse.error) {
-            console.error('Legacy edge function also failed:', legacyResponse.error);
-            // Will try fallback below
-          } else if (legacyResponse.data?.success) {
-            // Success with legacy function
-            await logSuccessfulNotification(completeNotificationData);
-            return { success: true, message: 'Notification sent successfully via legacy function' };
-          }
-        }
-        // Will try fallback below for all other errors
-      } else if (response.data?.success) {
-        // Success case - log notification and return
-        await logSuccessfulNotification(completeNotificationData);
-        return {
-          success: true,
-          message: 'Notification sent successfully'
-        };
-      }
-    } catch (edgeFunctionError) {
-      console.error('Failed to call edge function:', edgeFunctionError);
-      // Will try fallback below
-    }
-    
-    // If we get here, the edge function call failed - try direct fallback
-    return await sendFallbackNotificationDirectly(completeNotificationData);
-    
-  } catch (error) {
-    console.error('Error sending notification:', error);
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    return {
-      success: false,
-      error: errorMessage
-    };
-  }
-};
 
-// Helper function to log successful notifications
-const logSuccessfulNotification = async (notificationData: NotificationPayload) => {
-  try {
-    await logNotification(
-      notificationData.guardianEmail,
-      notificationData.studentEmail,
-      'location',
-      { 
-        location: { 
-          lat: notificationData.latitude, 
-          lng: notificationData.longitude 
-        } 
-      },
-      'sent'
-    );
-  } catch (logError) {
-    console.error('Error logging notification:', logError);
-    // Don't let logging errors affect the success response
+      if (emailError) {
+        logger.error(`Erro ao enviar email para ${guardianEmail}: ${emailError.message}`);
+      } else {
+        logger.info(`Email enviado com sucesso para ${guardianEmail}`);
+      }
+    }
+
+    // Log the notification
+    const { error: logError } = await supabase
+      .from('notification_logs')
+      .insert([
+        {
+          student_id: studentId,
+          guardian_id: guardianId,
+          notification_type: notificationType,
+          status: 'sent',
+          message: message,
+        },
+      ]);
+
+    if (logError) {
+      logger.error(`Erro ao registrar log de notificação: ${logError.message}`);
+    }
+
+    return true;
+  } catch (error: any) {
+    logger.error(`Erro ao enviar notificação para o guardião ${guardianId}: ${error.message}`);
+    return false;
   }
 };
 
 /**
- * Sends a fallback notification using client-side methods
+ * Sends a notification to all guardians of a student
  */
-export const sendFallbackNotificationDirectly = async (
-  notificationData: NotificationPayload
-): Promise<NotificationResult> => {
+export const sendNotificationToAllGuardians = async (
+  studentId: string,
+  message: string,
+  notificationType: string
+): Promise<boolean> => {
   try {
-    // Since useFallbackNotification is a hook, we need to create a function
-    // that doesn't require the hook to be used in the component context
-    const { sendFallbackEmail } = useFallbackNotification();
+    logger.info(`Enviando notificação para todos os responsáveis do aluno ${studentId} via ${notificationType}`);
+
+    // Fetch all guardians for the student
+    const { data: guardians, error: guardianError } = await supabase
+      .from('guardians')
+      .select('*')
+      .eq('student_id', studentId);
+
+    if (guardianError) {
+      logger.error(`Erro ao buscar responsáveis do aluno ${studentId}: ${guardianError.message}`);
+      return false;
+    }
+
+    if (!guardians || guardians.length === 0) {
+      logger.warn(`Nenhum responsável encontrado para o aluno ${studentId}`);
+      return false;
+    }
     
-    const {
-      guardianEmail,
-      guardianName,
-      studentName,
-      studentEmail,
-      latitude,
-      longitude,
-      timestamp = new Date().toISOString(),
-      mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`,
-      isEmergency = false
-    } = notificationData;
+    // Add null checks for all email references
+    const emails = guardians
+      .filter(guardian => guardian.email)
+      .map(guardian => guardian.email)
+      .filter(Boolean);
+
+    // Send email notification to all guardians
+    if (notificationType === 'email' || notificationType === 'both') {
+      const emailPayload = {
+        to: emails.join(','),
+        subject: 'Notificação do Sistema Monitore',
+        body: message,
+      };
+
+      const { error: emailError } = await supabase.functions.invoke('send-email', {
+        body: emailPayload,
+      });
+
+      if (emailError) {
+        logger.error(`Erro ao enviar email para os responsáveis do aluno ${studentId}: ${emailError.message}`);
+      } else {
+        logger.info(`Email enviado com sucesso para os responsáveis do aluno ${studentId}`);
+      }
+    }
+
+    // Log the notification for each guardian
+    for (const guardian of guardians) {
+      const { error: logError } = await supabase
+        .from('notification_logs')
+        .insert([
+          {
+            student_id: studentId,
+            guardian_id: guardian.id,
+            notification_type: notificationType,
+            status: 'sent',
+            message: message,
+          },
+        ]);
+
+      if (logError) {
+        logger.error(`Erro ao registrar log de notificação para o guardião ${guardian.id}: ${logError.message}`);
+      }
+    }
+
+    return true;
+  } catch (error: any) {
+    logger.error(`Erro ao enviar notificação para todos os responsáveis do aluno ${studentId}: ${error.message}`);
+    return false;
+  }
+};
+
+/**
+ * Triggers a Supabase Edge Function with retry logic
+ */
+export const triggerFunctionWithRetry = async (
+  functionName: string, 
+  payload: any,
+  maxRetries = 3
+): Promise<any> => {
+  let retries = 0;
+  let response: any = null;
+
+  while (retries < maxRetries) {
+    try {
+      logger.info(`Tentando chamar a função ${functionName} (tentativa ${retries + 1})`);
+
+      response = await supabase.functions.invoke(functionName, {
+        body: payload,
+      });
+
+      if (response.error) {
+        logger.error(`Erro na chamada da função ${functionName}: ${response.error.message}`);
+
+        // Modify the error checking to use optional chaining
+        const isRateLimited = 
+          response?.error?.message?.includes('rate limit') || 
+          response?.error?.message?.includes('429') ||
+          (response as any)?.status === 429;
+
+        if (isRateLimited) {
+          const waitTime = (retries + 1) * 1000;
+          logger.warn(`Limite de taxa atingido. Esperando ${waitTime}ms antes de tentar novamente.`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          retries++;
+        } else {
+          logger.error(`Erro não relacionado ao limite de taxa. Não tentando novamente.`);
+          break;
+        }
+      } else {
+        logger.info(`Função ${functionName} chamada com sucesso.`);
+        break;
+      }
+    } catch (error: any) {
+      logger.error(`Exceção ao chamar a função ${functionName}: ${error.message}`);
+      retries++;
+    }
+  }
+
+  if (response?.error) {
+    logger.error(`A função ${functionName} falhou após ${maxRetries} tentativas.`);
+  }
+
+  return response;
+};
+
+/**
+ * Sends a notification to a guardian using an Edge Function
+ * This is the function that was missing and causing the import error
+ */
+export interface NotificationResult {
+  success: boolean;
+  error?: string;
+  data?: any;
+}
+
+export const sendEdgeFunctionNotification = async (notificationData: any): Promise<NotificationResult> => {
+  try {
+    logger.info(`Enviando notificação via Edge Function para ${notificationData.guardianEmail}`);
     
-    // Format the body with the student's location information
-    const formattedTime = new Date(timestamp).toLocaleString('pt-BR');
-    const body = `Olá ${guardianName},\n\n${studentName} compartilhou sua localização atual com você.\n\nVocê pode visualizar a localização clicando no link abaixo.`;
-    
-    // Try to send the email via the client-side fallback
-    const emailSent = sendFallbackEmail({
-      to: guardianEmail,
-      subject: `Localização atual de ${studentName} - Sistema Monitore`,
-      body,
-      studentName,
-      guardianName,
-      latitude,
-      longitude
+    const response = await supabase.functions.invoke('send-guardian-email', {
+      body: JSON.stringify(notificationData)
     });
     
-    if (emailSent) {
+    if (response.error) {
+      logger.error(`Erro ao enviar notificação via Edge Function: ${response.error.message}`);
       return {
-        success: true,
-        message: 'Fallback notification method used successfully'
+        success: false,
+        error: response.error.message
       };
     }
     
+    logger.info('Notificação enviada com sucesso via Edge Function');
     return {
-      success: false,
-      error: 'All notification methods failed'
+      success: true,
+      data: response.data
     };
-  } catch (error) {
-    console.error('Error in fallback notification:', error);
+  } catch (error: any) {
+    logger.error(`Exceção ao enviar notificação via Edge Function: ${error.message}`);
     return {
       success: false,
-      error: error instanceof Error ? error.message : String(error)
+      error: error.message
     };
   }
 };
 
 /**
- * Sends a fallback notification using a different Edge Function
+ * Sends a fallback notification (email link)
+ * This is another function that was missing and causing an import error
  */
 export const sendFallbackNotification = async (
   guardianEmail: string,
@@ -195,98 +255,47 @@ export const sendFallbackNotification = async (
   timestamp: string
 ): Promise<NotificationResult> => {
   try {
-    console.log('Sending fallback notification using email-service function');
+    logger.info(`Enviando notificação de fallback para ${guardianEmail}`);
     
-    // Get the current origin for CORS headers
-    const origin = window.location.origin;
-    
-    // Create map URL for the location
+    // Create a simple email with location info
     const mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+    const subject = `Localização atual de ${studentName}`;
+    const body = `
+      <h2>Localização de ${studentName}</h2>
+      <p>Olá ${guardianName},</p>
+      <p>${studentName} compartilhou sua localização com você:</p>
+      <p>Coordenadas: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}</p>
+      <p>Horário: ${timestamp}</p>
+      <p><a href="${mapUrl}" target="_blank">Ver no mapa</a></p>
+    `;
     
-    // Try various functions in order of preference
-    const functionsToTry = ['email-service', 'notify-location', 'send-location-email'];
+    const emailPayload = {
+      to: guardianEmail,
+      subject,
+      html: body,
+    };
     
-    for (const functionName of functionsToTry) {
-      console.log(`Attempting to use ${functionName} function for fallback notification`);
-      
-      try {
-        const fallbackResponse = await supabase.functions.invoke(functionName, {
-          body: functionName === 'email-service' ? {
-            type: 'guardian-notification',
-            data: {
-              guardianEmail,
-              guardianName,
-              studentName,
-              studentEmail,
-              latitude,
-              longitude,
-              timestamp,
-              locationType: 'test'
-            }
-          } : {
-            guardianEmail,
-            guardianName,
-            studentName,
-            studentEmail,
-            latitude,
-            longitude,
-            timestamp,
-            locationType: 'test'
-          },
-          headers: {
-            'Content-Type': 'application/json',
-            'Origin': origin,
-            'X-Client-Info': 'monitore-app/1.0.0'
-          }
-        });
-        
-        console.log(`${functionName} fallback notification response:`, fallbackResponse);
-        
-        if (!fallbackResponse.error && 
-            (fallbackResponse.data?.success || (fallbackResponse.status >= 200 && fallbackResponse.status < 300))) {
-          // Log successful fallback notification
-          await logNotification(
-            guardianEmail,
-            studentEmail,
-            'location_fallback',
-            {
-              latitude,
-              longitude,
-              timestamp,
-              method: 'fallback',
-              functionUsed: functionName
-            },
-            'sent'
-          );
-          
-          return { 
-            success: true, 
-            message: `Notification sent using ${functionName} function` 
-          };
-        }
-      } catch (functionError) {
-        console.error(`Error with ${functionName} function:`, functionError);
-        // Continue to the next function
-      }
+    const { error: emailError } = await supabase.functions.invoke('email-service', {
+      body: emailPayload,
+    });
+    
+    if (emailError) {
+      logger.error(`Erro ao enviar email de fallback para ${guardianEmail}: ${emailError.message}`);
+      return {
+        success: false,
+        error: emailError.message
+      };
     }
     
-    // If all edge functions fail, try client-side fallback
-    return await sendFallbackNotificationDirectly({
-      guardianEmail,
-      guardianName,
-      studentName,
-      studentEmail,
-      latitude,
-      longitude,
-      timestamp,
-      mapUrl,
-      isEmergency: false
-    });
-  } catch (fallbackError) {
-    console.error(`Fallback notification failed:`, fallbackError);
-    return { 
-      success: false, 
-      error: fallbackError instanceof Error ? fallbackError.message : String(fallbackError)
+    logger.info(`Email de fallback enviado com sucesso para ${guardianEmail}`);
+    return {
+      success: true
+    };
+  } catch (error: any) {
+    logger.error(`Exceção ao enviar notificação de fallback: ${error.message}`);
+    return {
+      success: false,
+      error: error.message
     };
   }
 };

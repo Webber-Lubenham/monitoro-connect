@@ -1,100 +1,93 @@
 
-import { NotificationPayload, NotificationResult } from './types';
-import { toast } from '@/components/ui/use-toast';
+import React from 'react';
+import { toast } from '@/hooks/use-toast';
+import { MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import * as React from 'react';
+import { ToastAction } from '@/components/ui/toast';
 
-/**
- * Provides a client-side fallback notification method when edge functions fail
- * This creates a direct mailto: link for the user to send an email manually
- */
-export const createFallbackEmailLink = (
-  notificationData: NotificationPayload
-): string => {
-  const {
-    guardianEmail,
-    studentName,
-    latitude,
-    longitude,
-    timestamp = new Date().toISOString()
-  } = notificationData;
-  
-  // Create the map URL
-  const mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
-  
-  // Format timestamp for display
-  const formattedTime = new Date(timestamp).toLocaleString('pt-BR');
-  
-  // Create email subject and body
-  const subject = `Localização atual de ${studentName} - Sistema Monitore`;
-  const body = `
-    Olá,
-    
-    ${studentName} compartilhou sua localização atual com você.
-    
-    Horário: ${formattedTime}
-    
-    Veja no mapa: ${mapUrl}
-    
-    Sistema Monitore - Segurança e tranquilidade
-  `.trim().replace(/\n    /g, '\n'); // Remove extra indentation
-  
-  // Create mailto link
-  return `mailto:${encodeURIComponent(guardianEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-};
-
-/**
- * Shows a manual fallback dialog with instructions for the user
- */
-export const showManualFallbackOption = (mailtoLink: string): void => {
-  toast({
-    title: "Enviando notificação manualmente",
-    description: "O sistema de notificação automático falhou. Clique em 'Enviar Email' para abrir o seu aplicativo de email.",
-    action: React.createElement(
-      Button,
-      {
-        className: "bg-primary text-primary-foreground px-3 py-1 rounded hover:bg-primary/90 transition-colors",
-        onClick: () => window.open(mailtoLink, '_blank')
-      },
-      "Enviar Email"
-    ),
-    duration: 10000, // Longer duration to give user time to act
-  });
-};
-
-/**
- * Fallback notification method that provides manual options to the user
- * when all automatic methods fail
- */
-export const useFallbackManualNotification = () => {
-  const sendManualFallbackNotification = async (
-    notificationData: NotificationPayload
-  ): Promise<NotificationResult> => {
-    try {
-      // Create mailto link for manual sending
-      const mailtoLink = createFallbackEmailLink(notificationData);
-      
-      // Try to open user's email client directly
-      const emailWindow = window.open(mailtoLink, '_blank');
-      
-      // If popup blocked, show toast with button
-      if (!emailWindow) {
-        showManualFallbackOption(mailtoLink);
-      }
-      
-      return {
-        success: true,
-        message: 'Fallback notification option provided to user'
-      };
-    } catch (error) {
-      console.error('Error in manual fallback notification:', error);
-      
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error)
-      };
-    }
+interface NotificationOptions {
+  title?: string;
+  description?: string;
+  action?: {
+    label: string;
+    onClick: () => void;
   };
+  variant?: 'default' | 'destructive';
+}
+
+/**
+ * A simple fallback notification system that works even if there's no guardian to notify
+ * It uses the toast system to show a notification to the user
+ */
+export const showLocalFallbackNotification = ({
+  title = 'Conectado',
+  description = 'Sua localização está sendo monitorada',
+  action,
+  variant = 'default'
+}: NotificationOptions) => {
+  try {
+    // Show the toast with or without an action
+    toast({
+      title,
+      description,
+      variant,
+      icon: React.createElement(MessageCircle, { className: "h-4 w-4" }),
+      action: action
+        ? React.createElement(
+            ToastAction,
+            {
+              altText: action.label,
+              onClick: action.onClick
+            },
+            action.label
+          )
+        : undefined,
+    });
+
+    // Also log the notification to console for debugging
+    console.info(`[Local Notification] ${title}: ${description}`);
+  } catch (error) {
+    // If there's an error with the toast system, fallback to alert
+    console.error('Failed to show toast notification:', error);
+    try {
+      alert(`${title}: ${description}`);
+    } catch {
+      // Last resort - just log it
+      console.warn(`[NOTIFICATION] ${title}: ${description}`);
+    }
+  }
+};
+
+// Helper function to create a fallback email link with location data
+export const createFallbackEmailLink = (payload: {
+  guardianEmail: string;
+  studentName: string;
+  latitude: number;
+  longitude: number;
+}): string => {
+  const subject = encodeURIComponent(`Localização de ${payload.studentName}`);
+  const body = encodeURIComponent(
+    `Olá,\n\nEstou compartilhando minha localização com você:\n\n` +
+    `Latitude: ${payload.latitude}\n` +
+    `Longitude: ${payload.longitude}\n\n` +
+    `Veja no mapa: https://www.google.com/maps?q=${payload.latitude},${payload.longitude}\n\n` +
+    `Esta mensagem foi enviada automaticamente pelo Sistema Monitore.`
+  );
   
-  return { sendManualFallbackNotification };
+  return `mailto:${payload.guardianEmail}?subject=${subject}&body=${body}`;
+};
+
+// Shows a manual option for sending fallback notification
+export const showManualFallbackOption = (mailtoLink: string) => {
+  showLocalFallbackNotification({
+    title: 'Notificação direta falhou',
+    description: 'Não foi possível enviar notificação automática. Clique para enviar manualmente.',
+    variant: 'destructive',
+    action: {
+      label: 'Enviar Email',
+      onClick: () => {
+        window.open(mailtoLink, '_blank');
+      }
+    }
+  });
 };

@@ -1,10 +1,9 @@
 
-// deno-lint-ignore-file
-// @ts-expect-error - Supabase is installed via npm
 import { createClient } from '@supabase/supabase-js';
-import { supabaseUrl, supabaseAnonKey } from "../integrations/supabase/config.ts";
+import { supabaseUrl, supabaseAnonKey } from "../integrations/supabase/config";
+import type { Database } from '../integrations/supabase/database.types';
 
-type SupabaseClient = ReturnType<typeof createClient>;
+type SupabaseClient = ReturnType<typeof createClient<Database>>;
 
 // Global variable to store the singleton instance
 let supabaseInstance: SupabaseClient | null = null;
@@ -14,7 +13,7 @@ let supabaseInstance: SupabaseClient | null = null;
  */
 export const getSupabaseClient = (): SupabaseClient => {
   if (!supabaseInstance) {
-    supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
+    supabaseInstance = createClient<Database>(supabaseUrl, supabaseAnonKey, {
       auth: {
         persistSession: true,
         storage: localStorage,

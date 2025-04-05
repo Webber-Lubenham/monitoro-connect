@@ -12,11 +12,6 @@ import {
 export interface EmergencyNotificationOptions {
   isEmergency?: boolean;
   silent?: boolean;
-  channels?: {
-    email?: boolean;
-    sms?: boolean;
-    realtime?: boolean;
-  };
 }
 
 export const sendEmergencyNotification = async (
@@ -81,7 +76,6 @@ export const sendEmergencyNotification = async (
         message: `Seus responsáveis foram notificados via ${methodsText} com sua localização${isEmergency ? " de emergência" : ""}`
       };
     } else {
-      // If all notification methods failed but we saved to database
       return {
         success: true,
         message: "Sua localização foi registrada no sistema, mas não foi possível notificar os responsáveis diretamente"

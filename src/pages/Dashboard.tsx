@@ -1,8 +1,7 @@
 
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useToast } from "../components/ui/use-toast.ts";
-import { supabase } from "../integrations/supabase/client.ts";
+import { supabase } from "../lib/supabase.ts";
 import { PrivacySettings } from "../components/dashboard/PrivacySettings.tsx";
 import type { PrivacySettings as PrivacySettingsType } from "../lib/privacySettings.ts";
 import { defaultPrivacySettings } from "../lib/privacySettings.ts";
@@ -10,8 +9,7 @@ import { Card } from "../components/ui/card.tsx";
 import DashboardLayout from "../components/dashboard/DashboardLayout.tsx";
 import LocationCard from "../components/dashboard/LocationCard.tsx";
 import NotificationCard from "../components/dashboard/NotificationCard.tsx";
-
-// Instead of redefining geolocation interfaces, we'll use the standard DOM types
+import { useAuth } from "../providers/AuthProvider.tsx";
 
 const Dashboard = () => {
   const [location, setLocation] = useState<{ latitude: number; longitude: number; accuracy?: number } | null>(null);
@@ -19,48 +17,17 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
     let isMounted = true;
-    let sessionCheckAttempts = 0;
-    const MAX_ATTEMPTS = 3;
 
-    const checkSessionAndLocation = async () => {
+    const initializeDashboard = async () => {
       try {
         setIsLoading(true);
-        sessionCheckAttempts++;
         
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        console.log("Dashboard initialized with user:", user?.id);
         
-        if (sessionError) {
-          console.error("Error getting session:", sessionError);
-          
-          if (sessionCheckAttempts >= MAX_ATTEMPTS) {
-            if (isMounted) {
-              setHasError(true);
-              setIsLoading(false);
-              toast({
-                title: "Erro de conexão",
-                description: "Não foi possível verificar sua sessão. Tente novamente mais tarde.",
-                variant: "destructive",
-              });
-            }
-          } else {
-            // Try again in 2 seconds (with increasing delay)
-            setTimeout(checkSessionAndLocation, 2000 * sessionCheckAttempts);
-          }
-          return;
-        }
-        
-        if (!session) {
-          if (isMounted) {
-            console.log("No session found, redirecting to login");
-            navigate('/');
-          }
-          return;
-        }
-
         // Check if geolocation is supported
         if ("geolocation" in navigator) {
           navigator.geolocation.getCurrentPosition(
@@ -104,18 +71,20 @@ const Dashboard = () => {
         }
 
         try {
-          const { error } = await supabase
-            .from('parent_notification_preferences')
-            .select('*')
-            .eq('student_id', session.user.id)
-            .maybeSingle();
-
-          if (error) {
-            console.error("Error loading preferences:", error);
-            // Don't show error toast since this is optional
+          // We're now getting user ID from the auth provider
+          if (user?.id) {
+            const { error } = await supabase
+              .from('profiles')  // Use a table that exists in your schema
+              .select('*')
+              .eq('id', user.id)
+              .maybeSingle();
+  
+            if (error) {
+              console.error("Error loading user profile:", error);
+            }
           }
         } catch (error) {
-          console.error("Error loading preferences:", error);
+          console.error("Error loading profile:", error);
         }
         
         if (isMounted) {
@@ -135,12 +104,12 @@ const Dashboard = () => {
       }
     };
 
-    checkSessionAndLocation();
+    initializeDashboard();
 
     return () => {
       isMounted = false;
     };
-  }, [navigate, toast]);
+  }, [toast, user]);
 
   const handleLocationUpdate = (newLocation: { latitude: number; longitude: number; accuracy?: number }) => {
     setLocation(newLocation);
