@@ -12,13 +12,17 @@ export async function sendNotification(data: {
   try {
     console.log('Sending notification with data:', data);
     
+    // Explicitly set the origin header to help with CORS
+    const origin = window.location.origin;
+    
     // Add additional headers that might help with CORS
     const { data: response, error } = await supabase.functions.invoke('email-service', {
       body: data,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${process.env.VITE_SUPABASE_ANON_KEY}`,
-        'Origin': window.location.origin,
+        'Origin': origin,
+        'X-Application-Name': 'monitore-app',
       },
       method: 'POST',
     });

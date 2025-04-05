@@ -1,8 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { toast as sonnerToast } from "sonner";
 
 interface DebugInfo {
   profileCheck?: {
@@ -26,47 +26,23 @@ export const useLogin = () => {
   const [debugMode, setDebugMode] = useState(false);
   const [debugInfo, setDebugInfo] = useState<DebugInfo | null>(null);
 
-  // Reset login attempts after a delay
-  useEffect(() => {
-    if (loginAttempts >= 3) {
-      const timer = setTimeout(() => {
-        setLoginAttempts(0);
-      }, 60000); // Reset after 1 minute
-      return () => clearTimeout(timer);
-    }
-  }, [loginAttempts]);
-
   const normalizeEmail = (email: string) => {
     return email.trim().toLowerCase();
   };
 
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!email || !password) {
-      toast({
-        variant: "destructive",
-        title: "Campos obrigatórios",
-        description: "Por favor, preencha o email e a senha.",
-      });
-      return;
-    }
-    
     setIsLoading(true);
     setDebugInfo(null);
     
-    // Normalize email to lowercase and trim spaces
     const normalizedEmail = normalizeEmail(email);
     console.log('Attempting login with:', { email: normalizedEmail });
 
     try {
-      // Increment login attempts
       setLoginAttempts(prev => prev + 1);
       
-      // Log pre-authentication state
       console.log('Starting authentication process');
       
-      // Directly attempt authentication without checking profiles table first
       const { data, error } = await supabase.auth.signInWithPassword({
         email: normalizedEmail,
         password,
@@ -74,6 +50,7 @@ export const useLogin = () => {
 
       if (debugMode) {
         setDebugInfo((prev: DebugInfo | null) => ({ ...prev ?? {}, loginAttempt: { data, error } }));
+        console.log('Auth result:', { data, error });
       }
 
       if (error) {
@@ -84,31 +61,20 @@ export const useLogin = () => {
         });
         
         if (error.message.includes("Email not confirmed")) {
-          toast({
-            variant: "destructive",
-            title: "Email não confirmado",
-            description: "Por favor, verifique seu email e clique no link de confirmação antes de fazer login.",
-          });
+          showEmailVerificationToast();
         } else if (error.message.includes("Invalid login credentials")) {
-          toast({
-            variant: "destructive",
-            title: "Credenciais inválidas",
-            description: "Email ou senha incorretos. Verifique suas informações e tente novamente.",
-          });
+          showIncorrectPasswordToast();
         } else {
           toast({
             variant: "destructive",
             title: "Erro no login",
             description: `Ocorreu um erro: ${error.message}`,
           });
+          sonnerToast.error(`Erro: ${error.message}`);
         }
         
-        // If too many login attempts, suggest password reset
         if (loginAttempts >= 3) {
-          toast({
-            title: "Muitas tentativas de login",
-            description: "Esqueceu sua senha? Tente recuperá-la clicando em 'Esqueceu sua senha?'",
-          });
+          showPasswordRecoveryToast();
         }
         
         setIsLoading(false);
@@ -122,19 +88,17 @@ export const useLogin = () => {
           metadata: data.user.user_metadata
         });
         
-        // Reset login attempts on successful login
         setLoginAttempts(0);
         
         toast({
           title: "Login realizado com sucesso",
           description: "Redirecionando para o dashboard...",
         });
+        sonnerToast.success("Login realizado com sucesso");
         
-        // Check user role from metadata
         const userRole = data.user.user_metadata?.role || 'student';
         console.log('User role detected:', userRole);
         
-        // Redirect based on role
         if (userRole === 'guardian' || userRole === 'parent') {
           console.log('Redirecting to parent dashboard');
           navigate('/parent-dashboard');
@@ -149,6 +113,7 @@ export const useLogin = () => {
           title: "Erro no login",
           description: "Ocorreu um erro inesperado. Por favor, tente novamente.",
         });
+        sonnerToast.error("Erro inesperado");
       }
 
     } catch (error) {
@@ -158,6 +123,7 @@ export const useLogin = () => {
         title: "Erro no login",
         description: "Ocorreu um erro inesperado. Por favor, tente novamente.",
       });
+      sonnerToast.error("Erro inesperado no login");
     } finally {
       setIsLoading(false);
     }
@@ -171,6 +137,98 @@ export const useLogin = () => {
     });
   };
 
+  const testUserExistence = async () => {
+    if (!email) return;
+    
+    const normalizedEmail = normalizeEmail(email);
+    try {
+      console.log('Testando existência do usuário:', normalizedEmail);
+      
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, email')
+        .eq('email', normalizedEmail)
+        .maybeSingle();
+      
+      if (profileError) {
+        console.error('Erro ao verificar perfil:', profileError);
+        showEmailNotRegisteredToast();
+      } else if (profileData) {
+        console.log('Resultado da verificação (profiles):', profileData);
+        showEmailRegisteredToast();
+        return;
+      } else {
+        showEmailNotFoundToast();
+      }
+      
+    } catch (error) {
+      console.error('Erro ao testar existência do usuário:', error);
+      showEmailNotRegisteredToast();
+    }
+  };
+
+  const showEmailVerificationToast = () => {
+    toast({
+      title: "Email de verificação enviado",
+      description: "Verifique sua caixa de entrada",
+      duration: 5000
+    });
+  };
+
+  const showIncorrectPasswordToast = () => {
+    toast({
+      variant: "destructive",
+      title: "Senha incorreta",
+      description: "Verifique sua senha e tente novamente",
+      duration: 5000
+    });
+  };
+
+  const showEmailNotRegisteredToast = () => {
+    toast({
+      variant: "destructive",
+      title: "Email não encontrado",
+      description: "Este email não está cadastrado",
+      duration: 5000
+    });
+  };
+
+  const showPasswordRecoveryToast = () => {
+    toast({
+      variant: "destructive", 
+      title: "Muitas tentativas",
+      description: "Tente recuperar sua senha",
+      duration: 5000
+    });
+  };
+
+  const showEmailRegisteredToast = () => {
+    toast({
+      variant: "default",
+      title: "Email já cadastrado",
+      description: "Email está registrado",
+      duration: 5000
+    });
+  };
+
+  const showEmailNotFoundToast = () => {
+    toast({
+      variant: "destructive",
+      title: "Email não encontrado",
+      description: "Este email não está cadastrado",
+      duration: 5000
+    });
+  };
+
+  useEffect(() => {
+    if (loginAttempts >= 3) {
+      const timer = setTimeout(() => {
+        setLoginAttempts(0);
+      }, 60000);
+      return () => clearTimeout(timer);
+    }
+  }, [loginAttempts]);
+
   return {
     email,
     setEmail,
@@ -181,6 +239,7 @@ export const useLogin = () => {
     debugInfo,
     loginAttempts,
     handleEmailSignIn,
-    toggleDebugMode
+    toggleDebugMode,
+    testUserExistence
   };
 };

@@ -1,12 +1,13 @@
 
-import { Card } from '@/components/ui/card';
+import React from 'react';
+import { Loader2 } from 'lucide-react';
 
-export const ConfirmationLoading = () => {
+export const ConfirmationLoading: React.FC = () => {
   return (
-    <Card className="p-8 max-w-md w-full text-center">
-      <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-      <h2 className="text-xl font-medium mb-2">Processando...</h2>
-      <p className="text-gray-500">Aguarde enquanto processamos sua solicitação.</p>
-    </Card>
+    <div className="py-8 flex flex-col items-center">
+      <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+      <h2 className="text-xl font-semibold">Confirming your account...</h2>
+      <p className="text-gray-500 mt-2">Please wait a moment while we verify your account</p>
+    </div>
   );
 };

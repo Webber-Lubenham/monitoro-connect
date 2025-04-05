@@ -1,10 +1,9 @@
 #!/bin/bash
 
-# Set the Supabase access token
-export SUPABASE_ACCESS_TOKEN="sbp_a62a0ff07aed3f8d449dada64e2d40ca6ac1ba2c"
+# Make sure SUPABASE_ACCESS_TOKEN is set in environment before running
 
 # Project reference ID
-PROJECT_REF="usnrnaxpoqmojxsfcoox"
+PROJECT_REF="rsvjnndhbyyxktbczlnk"  # Updated project ID
 
 # List of functions to delete
 FUNCTIONS=(
@@ -18,6 +17,9 @@ FUNCTIONS=(
   "send-location-email"
   "verify-resend-config"
   "test-resend-connection"
+  "direct-email-test"
+  "send-test-email"
+  "send-email"
 )
 
 echo "🧹 Edge Functions Cleanup Tool 🧹"

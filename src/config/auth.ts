@@ -1,74 +1,112 @@
+import { supabase } from '../lib/supabase.ts';
+const STORAGE_KEY = 'sb-rsvjnndhbyyxktbczlnk-auth-token';
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 
-import { createClient, SupabaseClient, AuthChangeEvent, Session } from '@supabase/supabase-js'
-
-// Hardcoded Supabase configuration values
-const supabaseUrl = 'https://pqhxgsrbazjgzyrxhyjj.supabase.co'
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxaHhnc3JiYXpqZ3p5cnhoeWpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMyNjg4MzEsImV4cCI6MjA1ODg0NDgzMX0.EV6PyUfJRM3p8CFbWfXw0HCnY124PI-T6tQVDIe0DW0'
-
-// Singleton pattern for Supabase client
-let supabaseInstance: SupabaseClient | null = null
-let isInitializing = false
-
-export const supabase = (): SupabaseClient => {
-  if (!supabaseInstance && !isInitializing) {
-    isInitializing = true
-    try {
-      supabaseInstance = createClient(supabaseUrl, supabaseKey, {
-        auth: {
-          persistSession: true,
-          autoRefreshToken: true,
-          storage: localStorage,
-          storageKey: 'student-sentinel.auth.token',
-          detectSessionInUrl: false
-        }
-      })
-    } finally {
-      isInitializing = false
-    }
-  }
-  if (!supabaseInstance) {
-    throw new Error('Failed to initialize Supabase client')
-  }
-  return supabaseInstance
+interface ProfileUpdates {
+  email?: string;
+  role?: string;
 }
 
-// Authentication state management
 export const initializeAuth = () => {
-  const client = supabase()
-  
-  // Instead of removeAllListeners (which doesn't exist), we'll just set up the listener
-  // If called multiple times, it might create duplicate listeners, but that's ok for now
-  
-  client.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
-    console.log('Auth state changed:', event, session?.user?.id)
+  supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
+    console.log('Auth state changed:', event, session?.user?.id);
     
     if (event === 'SIGNED_OUT') {
-      // Clean up auth data
-      localStorage.removeItem('student-sentinel.auth.token')
-      // Clean up user preferences
-      localStorage.removeItem('student-sentinel.user.preferences')
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem('monitore.user.preferences');
     }
     
     if (event === 'SIGNED_IN' && session?.user?.id) {
-      // Initialize user preferences
-      initializeUserPreferences(session.user.id)
+      initializeUserPreferences(session.user.id);
+      ensureProfileData(session.user.id, session.user.email, session.user.user_metadata?.role);
     }
-  })
-}
+  });
+};
 
-// User preferences management
+const ensureProfileData = async (userId: string, email?: string, role?: string) => {
+  if (!userId) return;
+  
+  try {
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('id, email, role')
+      .eq('id', userId)
+      .single();
+    
+    if (error) {
+      console.error('Error checking profile:', error);
+      
+      if (error.code === 'PGRST116') {
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({ 
+            id: userId,
+            email: email,
+            role: role || 'student'
+          });
+        
+        if (insertError) console.error('Error creating profile:', insertError);
+      }
+      return;
+    }
+    
+    const updates: ProfileUpdates = {};
+    if (profile && email && !profile.email) updates.email = email;
+    if (profile && role && !profile.role) updates.role = role;
+    
+    if (Object.keys(updates).length > 0) {
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', userId);
+      
+      if (updateError) console.error('Error updating profile:', updateError);
+    }
+  } catch (error) {
+    console.error('Error ensuring profile data:', error);
+  }
+};
+
 const initializeUserPreferences = async (userId: string) => {
   try {
-    const { data: preferences, error } = await supabase()
+    // First check if table exists
+    const { error: tableError } = await supabase
+      .from('parent_notification_preferences')
+      .select('*')
+      .limit(1);
+
+    if (tableError?.code === '42P01') {
+      console.log('Notification preferences table does not exist');
+      return;
+    }
+
+    // Then check if user_id column exists
+    const { error: columnError } = await supabase
+      .from('parent_notification_preferences')
+      .select('user_id')
+      .limit(1);
+
+    if (columnError?.code === '42703') {
+      console.log('user_id column missing from notification preferences table');
+      return;
+    }
+
+    // Finally get user preferences
+    const { data: preferences, error } = await supabase
       .from('parent_notification_preferences')
       .select('*')
       .eq('user_id', userId)
-      .single()
+      .maybeSingle();
 
-    if (error) throw error
+    if (error) {
+      console.error('Error fetching user preferences:', error);
+      return;
+    }
 
-    localStorage.setItem('student-sentinel.user.preferences', JSON.stringify(preferences))
+    if (preferences) {
+      localStorage.setItem('monitore.user.preferences', JSON.stringify(preferences));
+    }
   } catch (error) {
-    console.error('Error initializing user preferences:', error)
+    console.error('Error initializing user preferences:', error);
   }
-}
+};

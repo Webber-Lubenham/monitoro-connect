@@ -1,179 +1,196 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 
-interface AuthContextType {
-  user: User | null;
-  session: Session | null;
-  isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
+export interface Profile {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email?: string;
+  role: 'student' | 'guardian';
+  created_at: string;
+  updated_at: string;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export interface AuthState {
+  user: User | null;
+  profile: Profile | null;
+  session: Session | null;
+  isLoading: boolean;
+}
+
+interface AuthContextType {
+  authState: AuthState;
+  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, userType?: string) => Promise<{ error: any }>;
+  signOut: () => Promise<void>;
+  user: User | null;
+  profile: Profile | null;
+  isLoading: boolean;
+}
+
+const initialState: AuthState = {
+  user: null,
+  profile: null,
+  session: null,
+  isLoading: true,
+};
+
+export const AuthContext = createContext<AuthContextType>({
+  authState: initialState,
+  signIn: async () => ({ error: null }),
+  signUp: async () => ({ error: null }),
+  signOut: async () => {},
+  user: null,
+  profile: null,
+  isLoading: true,
+});
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
-  const navigate = useNavigate();
+  const [authState, setAuthState] = useState<AuthState>(initialState);
+
+  const setProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return;
+      }
+
+      if (data) {
+        // Make sure the email is included in the profile
+        let profileWithEmail = data as Profile;
+        
+        if (!profileWithEmail.email) {
+          // Fetch user to get email if needed
+          const { data: userData } = await supabase.auth.getUser(userId);
+          if (userData?.user?.email) {
+            profileWithEmail.email = userData.user.email;
+          }
+        }
+
+        setAuthState(prev => ({
+          ...prev,
+          profile: profileWithEmail,
+        }));
+      }
+    } catch (err) {
+      console.error('Error in setProfile:', err);
+    }
+  };
 
   useEffect(() => {
-    // First set up the auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
-        console.log('Auth state changed in provider:', event);
-        
-        // Update the state with the current session/user
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-        
-        // Handle specific auth events if needed
-        if (event === 'SIGNED_IN') {
-          console.log('User signed in:', currentSession?.user?.id);
-        } else if (event === 'SIGNED_OUT') {
-          console.log('User signed out');
+      async (event, session) => {
+        setAuthState(prev => ({ ...prev, isLoading: true }));
+
+        if (session) {
+          setAuthState(prev => ({
+            ...prev,
+            user: session.user,
+            session,
+          }));
+          
+          await setProfile(session.user.id);
+        } else {
+          setAuthState(prev => ({
+            ...prev,
+            user: null,
+            profile: null,
+            session: null,
+          }));
         }
-        
-        setIsLoading(false);
+
+        setAuthState(prev => ({ ...prev, isLoading: false }));
       }
     );
 
-    // Then check for existing session
+    // Initial session check
     const initializeAuth = async () => {
-      try {
-        setIsLoading(true);
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-      } catch (error) {
-        console.error('Error checking session:', error);
-      } finally {
-        setIsLoading(false);
+      const { data } = await supabase.auth.getSession();
+      
+      if (data.session) {
+        setAuthState({
+          user: data.session.user,
+          profile: null, // Will be set by the setProfile call
+          session: data.session,
+          isLoading: true,
+        });
+        
+        await setProfile(data.session.user.id);
       }
+      
+      setAuthState(prev => ({ ...prev, isLoading: false }));
     };
 
     initializeAuth();
 
     return () => {
-      subscription.unsubscribe();
+      subscription?.unsubscribe();
     };
   }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
-      setIsLoading(true);
-      
-      if (!email || !password) {
-        toast({
-          variant: "destructive",
-          title: "Campos obrigatórios",
-          description: "Por favor, preencha o email e a senha.",
-        });
-        return;
-      }
-      
-      const normalizedEmail = email.trim().toLowerCase();
-      
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: normalizedEmail,
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
         password,
       });
+      return { error };
+    } catch (err) {
+      console.error('Error in signIn:', err);
+      return { error: err };
+    }
+  };
 
-      if (error) {
-        console.error('Authentication error:', error.message);
-        
-        if (error.message.includes("Email not confirmed")) {
-          toast({
-            variant: "destructive",
-            title: "Email não confirmado",
-            description: "Por favor, verifique seu email e clique no link de confirmação antes de fazer login.",
-          });
-        } else if (error.message.includes("Invalid login credentials")) {
-          toast({
-            variant: "destructive",
-            title: "Credenciais inválidas",
-            description: "Email ou senha incorretos. Verifique suas informações e tente novamente.",
-          });
-        } else {
-          toast({
-            variant: "destructive",
-            title: "Erro no login",
-            description: `Ocorreu um erro: ${error.message}`,
-          });
-        }
-        return;
-      }
-
-      if (data?.user) {
-        toast({
-          title: "Login realizado com sucesso",
-          description: "Redirecionando para o dashboard...",
-        });
-        
-        // Redirect based on role
-        const userRole = data.user.user_metadata?.role || 'student';
-        
-        if (userRole === 'guardian' || userRole === 'parent') {
-          navigate('/parent-dashboard');
-        } else {
-          navigate('/dashboard');
-        }
-      }
-    } catch (error) {
-      console.error('Unhandled authentication error:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro no login",
-        description: "Ocorreu um erro inesperado. Por favor, tente novamente.",
+  const signUp = async (email: string, password: string, userType = 'student') => {
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            user_type: userType,
+          },
+        },
       });
-    } finally {
-      setIsLoading(false);
+      return { error };
+    } catch (err) {
+      console.error('Error in signUp:', err);
+      return { error: err };
     }
   };
 
   const signOut = async () => {
     try {
-      setIsLoading(true);
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        throw error;
-      }
-      
-      // Navigate to home page after sign out
-      navigate('/');
-      
-      toast({
-        title: "Logout realizado com sucesso",
-      });
-    } catch (error) {
-      console.error('Error signing out:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao sair",
-        description: "Ocorreu um erro ao tentar sair. Por favor, tente novamente.",
-      });
-    } finally {
-      setIsLoading(false);
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error('Error in signOut:', err);
     }
   };
 
+  // Create a value object that includes both the state and functions
+  // as well as direct access to user, profile and loading state for simpler access
   const value = {
-    user,
-    session,
-    isLoading,
+    authState,
     signIn,
+    signUp,
     signOut,
+    user: authState.user,
+    profile: authState.profile,
+    isLoading: authState.isLoading,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
+// Custom hook for easier access to auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {

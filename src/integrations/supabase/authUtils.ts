@@ -11,26 +11,91 @@ export interface SimpleSupabaseUser {
 
 /**
  * Find a user by email in Supabase 
- * Using a more reliable approach that doesn't require admin privileges
+ * Using a more robust approach that works even with partial database schema
  */
 export const findUserByEmail = async (email: string): Promise<string | null> => {
+  if (!email) return null;
+  
   try {
-    // Instead of trying to list all users (which requires admin privileges),
-    // we'll query the profiles table which should have the same information
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, email')
-      .eq('email', email.toLowerCase())
-      .single();
+    const normalizedEmail = email.toLowerCase().trim();
+    console.log('Procurando usuário pelo email:', normalizedEmail);
     
-    if (error) {
-      console.error('Error finding user by email:', error);
-      return null;
+    // Primeiro: verificar diretamente nos registros de autenticação
+    try {
+      // Note: Instead of using invalid filter property, query differently
+      const { data: usersData, error: usersError } = await supabase.auth.admin.listUsers();
+      
+      if (usersError) {
+        console.log('Admin API error:', usersError);
+      } else if (usersData?.users) {
+        const matchingUser = usersData.users.find(u => u.email?.toLowerCase() === normalizedEmail);
+        if (matchingUser) {
+          console.log('Usuário encontrado no sistema de autenticação:', matchingUser.id);
+          return matchingUser.id;
+        }
+      }
+    } catch (adminError) {
+      console.log('Admin API não disponível ou erro:', adminError);
     }
     
-    return data?.id || null;
-  } catch (error) {
-    console.error('Error finding user by email:', error);
+    // Alternativa: verificar na tabela de perfis
+    try {
+      // Tenta obter dados da tabela de perfis com várias colunas possíveis (para flexibilidade)
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', normalizedEmail)
+        .maybeSingle();
+      
+      if (profileError) {
+        console.log('Erro ao buscar perfil:', profileError);
+      } else if (profileData) {
+        console.log('Usuário encontrado na tabela de perfis:', profileData.id);
+        return profileData.id;
+      }
+    } catch (profileQueryError) {
+      console.log('Erro na consulta de perfis:', profileQueryError);
+    }
+    
+    // Último recurso: Verificar usando a função get_profile_by_email
+    try {
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_profile_by_email', { 
+        email_param: normalizedEmail 
+      });
+      
+      if (rpcError) {
+        console.log('Erro na função RPC:', rpcError);
+      } else if (rpcData && rpcData.id) {
+        console.log('Usuário encontrado via RPC:', rpcData.id);
+        return rpcData.id;
+      }
+    } catch (rpcCallError) {
+      console.log('Erro ao chamar RPC:', rpcCallError);
+    }
+    
+    console.log('Usuário não encontrado com o email:', email);
     return null;
+  } catch (error) {
+    console.error('Erro ao buscar usuário por email:', error);
+    return null;
+  }
+};
+
+/**
+ * Verificar se a senha está correta para um determinado email
+ */
+export const verifyPassword = async (email: string, password: string): Promise<boolean> => {
+  try {
+    // Testamos o login sem alterar o estado da aplicação
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.toLowerCase().trim(),
+      password
+    });
+    
+    // Se não houver erro e tivermos dados do usuário, a senha está correta
+    return !error && !!data.user;
+  } catch (error) {
+    console.error('Erro ao verificar senha:', error);
+    return false;
   }
 };

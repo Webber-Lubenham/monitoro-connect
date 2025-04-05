@@ -1,69 +1,45 @@
 
-import { NotificationPosition } from './types';
+import { getCurrentLocation } from '@/services/notification/notificationService';
+import { NotificationPayload } from './types';
 
 /**
- * Create a Promise wrapper for the geolocation API
+ * Gets the current location wrapped in a promise
  */
 export const getLocationPromise = (): Promise<GeolocationPosition> => {
-  return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) {
-      reject(new Error('Geolocation não é suportada neste navegador.'));
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        resolve(position);
-      },
-      (error) => {
-        let errorMessage = 'Erro desconhecido ao obter localização.';
+  return new Promise<GeolocationPosition>((resolve, reject) => {
+    getCurrentLocation(
+      (position: { latitude: number; longitude: number; accuracy?: number }) => {
+        // Create a proper GeolocationPosition object
+        const geolocationPosition: GeolocationPosition = {
+          coords: {
+            latitude: position.latitude,
+            longitude: position.longitude,
+            accuracy: position.accuracy ?? 0,
+            altitude: null,
+            altitudeAccuracy: null,
+            heading: null,
+            speed: null
+          },
+          timestamp: Date.now()
+        } as GeolocationPosition;
         
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage = 'Acesso à localização foi negado pelo usuário.';
-            break;
-          case error.POSITION_UNAVAILABLE:
-            errorMessage = 'Informação de localização indisponível.';
-            break;
-          case error.TIMEOUT:
-            errorMessage = 'Tempo limite excedido ao obter localização.';
-            break;
-        }
-        
-        reject(new Error(errorMessage));
+        resolve(geolocationPosition);
       },
-      { 
-        enableHighAccuracy: true, 
-        timeout: 10000, 
-        maximumAge: 0 
-      }
+      (error: string) => reject(new Error(error))
     );
   });
 };
 
 /**
- * Format location info for display
+ * Format location data for display
  */
 export const formatLocationInfo = (latitude: number, longitude: number): string => {
-  return `Latitude: ${latitude.toFixed(6)}, Longitude: ${longitude.toFixed(6)}`;
+  return `Lat: ${latitude.toFixed(5)}, Long: ${longitude.toFixed(5)}`;
 };
 
 /**
- * Check if the current location has high accuracy
+ * Create a Google Maps URL from coordinates
  */
-export const hasHighAccuracy = (accuracy: number): boolean => {
-  // Consider high accuracy anything below 50 meters
-  return accuracy < 50;
-};
-
-/**
- * Convert a GeolocationPosition to NotificationPosition
- */
-export const positionToNotificationPosition = (position: GeolocationPosition): NotificationPosition => {
-  return {
-    latitude: position.coords.latitude,
-    longitude: position.coords.longitude,
-    accuracy: position.coords.accuracy,
-    timestamp: new Date(position.timestamp).toISOString()
-  };
+export const createMapUrl = (position: { latitude: number; longitude: number }): string => {
+  return `https://www.google.com/maps?q=${position.latitude},${position.longitude}`;
 };

@@ -1,5 +1,8 @@
 
-import { Resend } from "npm:resend@2.0.0";
+// @ts-nocheck
+
+// Importing Resend without type checking
+import { Resend } from "https://esm.sh/resend@2.0.0";
 
 // Types for email requests
 export interface EmailRequest {

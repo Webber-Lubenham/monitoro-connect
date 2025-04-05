@@ -2,7 +2,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import resendService from "@/services/email/resendService";
-import { getUserSession } from "@/utils/authUtils";
 import type { Guardian } from "@/types/database.types";
 
 /**
@@ -61,11 +60,23 @@ export const notifyAllGuardiansViaEmail = async (
       return false;
     }
 
-    // Calculate type-safe version for use with Promise.all
-    const typeSafeGuardians = data.map(guardian => ({
-      ...guardian,
-      student_id: guardian.student_id || ""
-    })) as Guardian[];
+    // Create properly typed guardians array to work with
+    const typeSafeGuardians = data.map(guardian => {
+      // Ensure student_id is always a string (not null)
+      const student_id = guardian.student_id || "";
+      
+      // Convert is_primary from null to false if needed
+      const is_primary = guardian.is_primary === null ? false : guardian.is_primary;
+      
+      // Return a guardian object that matches the Guardian type
+      return {
+        ...guardian,
+        student_id,
+        is_primary,
+        // Handle other potentially null fields that should be converted to undefined
+        cpf: guardian.cpf || undefined
+      } as Guardian;
+    });
     
     // Send email to each guardian
     const results = await Promise.all(

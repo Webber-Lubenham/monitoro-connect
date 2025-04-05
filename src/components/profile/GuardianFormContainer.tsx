@@ -15,16 +15,18 @@ export const GuardianFormContainer = ({ onSubmit, errors, onClose }: GuardianFor
     nome: '', 
     telefone: '', 
     email: '', 
-    isPrimary: false,
-    cpf: '' // Initialize CPF field
+    is_primary: false,
+    cpf: '',
+    student_id: '' // This is required according to the type
   });
 
   const handleSubmit = async () => {
     const success = await onSubmit(newGuardian);
     if (success) {
-      setNewGuardian({ nome: '', telefone: '', email: '', isPrimary: false, cpf: '' });
+      setNewGuardian({ nome: '', telefone: '', email: '', is_primary: false, cpf: '', student_id: '' });
       onClose();
     }
+    return success;
   };
 
   return (

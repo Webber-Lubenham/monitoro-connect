@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bell, Mail, Phone } from "lucide-react";
@@ -40,14 +39,20 @@ const NotificationPreferences = () => {
         return;
       }
 
+      console.log("Loading preferences for parent ID:", user.id);
+
       const { data: prefsData, error } = await supabase
         .from('parent_notification_preferences')
         .select('*')
         .eq('parent_id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching preferences:", error);
+        throw error;
+      }
       
-      // Convert from Supabase response type to our app type, ensuring null values are handled
+      console.log("Preferences data received:", prefsData);
+      
       const processedPrefs: NotificationPreference[] = (prefsData || []).map((pref: SupabaseNotificationPreference) => ({
         id: pref.id,
         notification_type: pref.notification_type || 'email', // Default to 'email' if null
@@ -76,7 +81,6 @@ const NotificationPreferences = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
-      // Buscar preferência atual para manter o email se não estiver sendo atualizado
       const currentPref = preferences.find(p => p.student_id === studentId);
       
       const updateData = {

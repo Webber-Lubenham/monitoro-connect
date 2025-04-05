@@ -1,98 +1,99 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { logger } from '@/utils/logger';
 import { NotificationLogEntry } from './types';
 import { Guardian } from '@/types/database.types';
 
 /**
- * Save location data to the database
+ * Saves location update to the database
  */
 export const saveLocationToDatabase = async (
   userId: string,
   latitude: number,
   longitude: number,
   accuracy?: number,
-  altitude?: number
-): Promise<void> => {
+  altitude?: number | null
+): Promise<boolean> => {
   try {
-    // Cast any to avoid TypeScript errors with Supabase tables that aren't in types
-    const { error } = await (supabase
-      .from('location_updates') as any)
+    const { error } = await supabase
+      .from('location_updates')
       .insert({
         student_id: userId,
         latitude,
         longitude,
-        accuracy: accuracy || null,
-        altitude: altitude || null,
-        timestamp: new Date().toISOString(),
+        accuracy,
+        altitude,
+        timestamp: new Date().toISOString()
       });
 
     if (error) {
       console.error('Error saving location:', error);
+      return false;
     }
+    
+    return true;
   } catch (error) {
     console.error('Exception saving location:', error);
+    return false;
   }
 };
 
 /**
- * Log a notification in the system
+ * Logs notification in the database
  */
 export const logNotification = async (
-  recipientEmail: string,
+  guardianEmail: string,
   studentId: string,
   notificationType: string,
-  data: any
-): Promise<void> => {
+  details: Record<string, any>,
+  status: string = 'sent'
+): Promise<boolean> => {
   try {
-    // Create log entry
-    const logEntry: any = {
+    // Ensure all required fields are present
+    if (!guardianEmail || !studentId || !notificationType) {
+      console.error('Missing required fields for notification log');
+      return false;
+    }
+
+    // Create notification log entry
+    const notificationLog: NotificationLogEntry = {
+      guardian_email: guardianEmail,
       student_id: studentId,
       notification_type: notificationType,
-      status: 'sent',
-      recipient_email: recipientEmail,
-      metadata: data,
-      sent_at: new Date().toISOString(),
+      details: details || {},
+      status: status,
+      created_at: new Date().toISOString()
     };
 
-    // Insert into logs table
-    const { error } = await (supabase
-      .from('notification_logs') as any)
-      .insert(logEntry);
+    // Insert into database
+    const { error } = await supabase
+      .from('notification_logs')
+      .insert(notificationLog);
 
     if (error) {
       console.error('Error logging notification:', error);
+      return false;
     }
+
+    return true;
   } catch (error) {
     console.error('Exception logging notification:', error);
+    return false;
   }
 };
 
 /**
- * Fetch guardians for a student
+ * Fetches guardians for a student
  */
-export const fetchGuardians = async (studentId: string): Promise<Guardian[]> => {
-  try {
-    // Cast to avoid TypeScript errors with tables not in types
-    const { data: guardians, error } = await (supabase
-      .from('guardians') as any)
-      .select('*')
-      .eq('student_id', studentId);
+export const fetchGuardians = async (userId: string): Promise<Guardian[]> => {
+  const { data: guardians, error } = await supabase
+    .from('guardians')
+    .select('*')
+    .eq('student_id', userId);
 
-    if (error) {
-      console.error('Error fetching guardians:', error);
-      return [];
-    }
-
-    if (!guardians || guardians.length === 0) {
-      console.warn(`No guardians found for student ${studentId}`);
-      return [];
-    }
-
-    // Cast to Guardian type
-    return guardians as unknown as Guardian[];
-  } catch (error) {
-    console.error('Exception fetching guardians:', error);
-    return [];
+  if (error) {
+    console.error('Error fetching guardians:', error);
+    throw new Error('Não foi possível obter a lista de responsáveis');
   }
+
+  // Type-casting and filtering out invalid data
+  return (guardians || []).filter(guardian => guardian.student_id) as Guardian[];
 };

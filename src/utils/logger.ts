@@ -1,86 +1,77 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { PostgrestError } from '@supabase/supabase-js';
 import { LogEntry } from '@/types/database.types';
 
-const LOG_LEVELS = {
-  debug: 0,
-  info: 1,
-  warn: 2,
-  error: 3,
-  fatal: 4
-};
+// Log levels
+export enum LogLevel {
+  DEBUG = 'debug',
+  INFO = 'info',
+  WARNING = 'warning',
+  ERROR = 'error',
+  CRITICAL = 'critical',
+}
 
 /**
- * Inserts logs into the database
+ * Logs a message to the database
+ * @param level Log level
+ * @param message Log message
+ * @param metadata Optional metadata
  */
-export const insertLogs = async (logs: LogEntry[]): Promise<boolean> => {
-  try {
-    if (!logs || logs.length === 0) return true;
-
-    const convertedLogs = logs.map(log => ({
-      message: log.message,
-      level: log.level,
-      timestamp: log.timestamp || new Date().toISOString(),
-      metadata: log.metadata || {}
-    }));
-
-    // Insert logs into the database
-    const { error } = await supabase
-      .from('logs')
-      .insert(convertedLogs as any);
-
-    if (error) {
-      console.error('Failed to insert logs into database:', error);
-      return false;
-    }
-
-    return true;
-  } catch (e) {
-    console.error('Exception in insertLogs:', e);
-    return false;
-  }
-};
-
-/**
- * Log a message with additional metadata
- */
-export const logMessage = async (
-  level: string,
+export const logToDatabase = async (
+  level: LogLevel,
   message: string,
   metadata?: Record<string, any>
-): Promise<boolean> => {
+): Promise<void> => {
   try {
-    const logEntry: LogEntry = {
-      message,
-      level,
-      timestamp: new Date().toISOString(),
-      metadata
-    };
+    const { error } = await supabase
+      .from('logs')
+      .insert({
+        level,
+        message,
+        metadata,
+        timestamp: new Date().toISOString(),
+      });
 
-    // Always log to console
-    const consoleMethod = level === 'error' || level === 'fatal' 
-      ? console.error 
-      : level === 'warn' 
-        ? console.warn 
-        : console.log;
-    
-    consoleMethod(`[${level.toUpperCase()}] ${message}`, metadata || '');
-
-    // Insert into database
-    return await insertLogs([logEntry]);
-  } catch (e) {
-    console.error('Exception in logMessage:', e);
-    return false;
+    if (error) {
+      console.error('Error logging to database:', error);
+    }
+  } catch (err) {
+    console.error('Exception logging to database:', err);
   }
 };
 
 /**
- * Global logger object
+ * Fetches logs from the database
+ * @param limit Maximum number of logs to fetch
+ * @param level Optional log level filter
+ * @returns Array of log entries
  */
-export const logger = {
-  debug: (message: string, metadata?: Record<string, any>) => logMessage('debug', message, metadata),
-  info: (message: string, metadata?: Record<string, any>) => logMessage('info', message, metadata),
-  warn: (message: string, metadata?: Record<string, any>) => logMessage('warn', message, metadata),
-  error: (message: string, metadata?: Record<string, any>) => logMessage('error', message, metadata),
-  fatal: (message: string, metadata?: Record<string, any>) => logMessage('fatal', message, metadata),
+export const fetchLogs = async (
+  limit: number = 100,
+  level?: LogLevel
+): Promise<LogEntry[]> => {
+  try {
+    let query = supabase
+      .from('logs')
+      .select('*')
+      .order('timestamp', { ascending: false })
+      .limit(limit);
+
+    if (level) {
+      query = query.eq('level', level);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error fetching logs:', error);
+      return [];
+    }
+
+    return data as LogEntry[];
+  } catch (err) {
+    console.error('Exception fetching logs:', err);
+    return [];
+  }
 };

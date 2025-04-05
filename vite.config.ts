@@ -5,7 +5,7 @@ import path from "node:path";
 import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
+export default defineConfig(({ mode }: { mode: string }) => ({
   server: {
     host: 'localhost',
     port: 8080,
@@ -50,7 +50,7 @@ export default defineConfig(({ mode }) => ({
   ].filter(Boolean),
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(new URL('.', import.meta.url).pathname, "./src"),
     },
   },
   // Added build configuration

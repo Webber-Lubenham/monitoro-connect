@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import resendService from "@/services/email/resendService";
 import { useState } from "react";
 
 interface PasswordResetFormProps {
@@ -22,7 +21,7 @@ export const PasswordResetForm = ({ onCancel }: PasswordResetFormProps) => {
       return 'http://localhost:8080';
     }
     // Use HTTPS for production with the correct domain
-    return 'https://www.sistema-monitore.com.br';
+    return 'https://student-sentinel-hub.lovable.app';
   };
 
   const handlePasswordReset = async (e: React.FormEvent) => {
@@ -49,18 +48,8 @@ export const PasswordResetForm = ({ onCancel }: PasswordResetFormProps) => {
       if (supabaseError) throw supabaseError;
 
       console.log("Resposta da solicitação de redefinição:", data);
-
-      // Enviar email personalizado caso necessário
-      try {
-        // Esta linha é opcional, pois o Supabase já envia o email padrão
-        const resetUrl = `${appUrl}/reset-password`;
-        await resendService.sendPasswordResetEmail(email, resetUrl);
-        console.log("Email personalizado enviado com sucesso");
-      } catch (emailError) {
-        console.error("Erro ao enviar email personalizado:", emailError);
-        // Se falhar o envio do email personalizado, o Supabase já terá enviado o email padrão
-      }
-
+      
+      // Não tentamos enviar email personalizado para evitar problemas de CORS
       toast({
         title: "✉️ Email enviado",
         description: "Enviamos instruções para recuperar sua senha. Verifique sua caixa de entrada e pasta de spam.",

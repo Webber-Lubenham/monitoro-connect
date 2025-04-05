@@ -1,218 +1,150 @@
 
 import { useState, useEffect } from 'react';
-import { getGuardians } from '@/services/guardian';
-import { useToast } from '@/hooks/use-toast';
-import { Guardian, GuardianForm } from '@/types/database.types';
-import { createGuardian, deleteGuardian, updateGuardianInfo } from '@/services/guardianService';
-import { FormErrors } from '@/hooks/guardians/types';
+import { supabase } from '@/lib/supabase';
+import { toast } from '@/hooks/use-toast';
+import { useProfile } from '@/hooks/useProfile';
 
-export const useGuardians = (studentId?: string) => {
+export interface Guardian {
+  id: string;
+  nome: string;
+  email: string;
+  telefone?: string;
+  student_id: string;
+  status: string;
+  created_at: string;
+}
+
+export interface FormErrors {
+  nome?: string;
+  email?: string;
+  telefone?: string;
+  cpf?: string;
+}
+
+export const useGuardians = () => {
   const [guardians, setGuardians] = useState<Guardian[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  const [formErrors, setFormErrors] = useState<FormErrors>({});
-  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const { profile } = useProfile();
 
-  // Fetch guardians initially and when studentId changes
   useEffect(() => {
-    const fetchGuardians = async () => {
-      if (!studentId) return;
-      
-      try {
-        setIsLoading(true);
-        setError(null);
-        const guardiansList = await getGuardians(studentId);
-        
-        // Cast the result to Guardian[] to fix the type error
-        setGuardians(guardiansList as unknown as Guardian[]);
-      } catch (err: any) {
-        console.error('Error fetching guardians:', err);
-        setError(err);
-        toast({
-          variant: "destructive",
-          title: "Erro ao buscar responsáveis",
-          description: err.message
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    if (profile?.id) {
+      fetchGuardians();
+    }
+  }, [profile?.id]);
 
-    fetchGuardians();
-  }, [studentId, toast]);
-
-  // Add a new guardian
-  const addGuardian = async (newGuardian: GuardianForm): Promise<boolean> => {
+  const fetchGuardians = async () => {
     try {
-      if (!studentId) {
-        throw new Error("ID do aluno não encontrado");
+      setLoading(true);
+      
+      if (!profile?.id) {
+        console.error('No profile ID available');
+        return;
+      }
+      
+      console.log(`Loading guardians for user ID: ${profile.id}`);
+      
+      const { data, error } = await supabase
+        .from('guardians')
+        .select('*')
+        .eq('student_id', profile.id);
+
+      if (error) {
+        throw error;
       }
 
-      // Validate form fields
-      const errors: FormErrors = {};
-      let hasErrors = false;
+      console.log(`Found ${data.length} guardians for this user`);
+      setGuardians(data || []);
+    } catch (error) {
+      console.error('Error fetching guardians:', error);
+      toast({
+        title: 'Erro ao carregar responsáveis',
+        description: 'Não foi possível obter a lista de responsáveis.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      if (!newGuardian.nome || newGuardian.nome.trim().length < 3) {
-        errors.nome = "Nome deve ter pelo menos 3 caracteres";
-        hasErrors = true;
-      }
-
-      if (!newGuardian.email || !newGuardian.email.includes('@')) {
-        errors.email = "Email inválido";
-        hasErrors = true;
-      }
-
-      if (!newGuardian.telefone || newGuardian.telefone.replace(/\D/g, '').length < 10) {
-        errors.telefone = "Telefone inválido";
-        hasErrors = true;
-      }
-
-      if (newGuardian.cpf && newGuardian.cpf.replace(/\D/g, '').length !== 11) {
-        errors.cpf = "CPF inválido";
-        hasErrors = true;
-      }
-
-      if (hasErrors) {
-        setFormErrors(errors);
+  const notifyGuardians = async (
+    location: { latitude: number; longitude: number; accuracy?: number }
+  ) => {
+    try {
+      // Ensure we have guardians to notify
+      if (guardians.length === 0) {
+        toast({
+          title: 'Nenhum responsável encontrado',
+          description: 'Você precisa cadastrar responsáveis antes de enviar notificações.',
+          variant: 'destructive',
+        });
         return false;
       }
 
-      setIsLoading(true);
-      setFormErrors({});
-
-      // Format the guardian data
-      const guardianData = {
-        nome: newGuardian.nome,
-        email: newGuardian.email,
-        telefone: newGuardian.telefone,
-        is_primary: newGuardian.isPrimary,
-        cpf: newGuardian.cpf
-      };
-
-      // Call the API to create guardian
-      const result = await createGuardian(studentId, guardianData);
-
-      if (!result.success) {
-        throw new Error("Falha ao adicionar responsável");
-      }
-
-      // Fetch updated guardians list
-      const updatedGuardians = await getGuardians(studentId);
-      setGuardians(updatedGuardians as unknown as Guardian[]);
-
-      toast({
-        title: "Responsável adicionado",
-        description: "O responsável foi adicionado com sucesso."
-      });
-
-      return true;
-    } catch (err: any) {
-      console.error('Error adding guardian:', err);
-      
-      // Check for specific errors
-      if (err.message.includes("already exists")) {
-        setFormErrors({ email: "Este email já está cadastrado como responsável" });
-      } else {
+      // Ensure we have the user's profile
+      if (!profile) {
         toast({
-          variant: "destructive",
-          title: "Erro ao adicionar responsável",
-          description: err.message
+          title: 'Perfil não encontrado',
+          description: 'Não foi possível obter seu perfil.',
+          variant: 'destructive',
         });
+        return false;
       }
-      
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  // Remove a guardian
-  const removeGuardian = async (guardianId: string): Promise<boolean> => {
-    if (!studentId || !guardianId) return false;
-    
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      const result = await deleteGuardian(guardianId, studentId);
-      
-      if (!result.success) {
-        throw new Error(result.error || "Erro ao remover responsável");
+      // Get current origin for CORS
+      const origin = window.location.origin;
+
+      // Use the send-location-email function for more reliable delivery
+      for (const guardian of guardians) {
+        try {
+          // Add a small delay between requests to prevent rate limiting
+          if (guardian !== guardians[0]) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+
+          // Call the Edge Function directly with the CORS header
+          const response = await supabase.functions.invoke('send-location-email', {
+            body: JSON.stringify({
+              studentName: profile.name || profile.email || 'Aluno', // Changed from full_name to name
+              guardianEmail: guardian.email,
+              guardianName: guardian.nome,
+              latitude: location.latitude,
+              longitude: location.longitude,
+              timestamp: new Date().toISOString(),
+              accuracy: location.accuracy,
+              trackingId: Math.random().toString(36).substring(2, 15)
+            }),
+            headers: {
+              'Content-Type': 'application/json',
+              'Origin': origin
+            }
+          });
+
+          if (response.error) {
+            console.error('Failed to notify guardian:', guardian.email, response.error);
+          } else {
+            console.log('Successfully notified guardian:', guardian.email);
+          }
+        } catch (guardianError) {
+          console.error(`Error notifying guardian ${guardian.email}:`, guardianError);
+        }
       }
-      
-      // Update the UI by filtering out the removed guardian
-      setGuardians(current => current.filter(g => g.id !== guardianId));
-      
+
       return true;
-    } catch (err: any) {
-      console.error('Error removing guardian:', err);
-      setError(err);
-      // Toast message is handled in the guardian service
+    } catch (error) {
+      console.error('Error in notification process:', error);
+      toast({
+        title: 'Erro ao notificar responsáveis',
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        variant: 'destructive',
+      });
       return false;
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  // Update a guardian
-  const updateGuardian = async (guardianId: string, data: Partial<GuardianForm>): Promise<boolean> => {
-    if (!guardianId) return false;
-    
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      // Convert from form format to update format
-      const updateData = {
-        nome: data.nome,
-        email: data.email,
-        telefone: data.telefone,
-        is_primary: data.isPrimary,
-        cpf: data.cpf
-      };
-      
-      const success = await updateGuardianInfo(guardianId, updateData);
-      
-      if (!success) {
-        throw new Error("Falha ao atualizar responsável");
-      }
-      
-      // Refresh the guardians list
-      if (studentId) {
-        const updatedGuardians = await getGuardians(studentId);
-        setGuardians(updatedGuardians as unknown as Guardian[]);
-      }
-      
-      toast({
-        title: "Responsável atualizado",
-        description: "As informações do responsável foram atualizadas com sucesso."
-      });
-      
-      return true;
-    } catch (err: any) {
-      console.error('Error updating guardian:', err);
-      setError(err);
-      
-      toast({
-        variant: "destructive",
-        title: "Erro ao atualizar responsável",
-        description: err.message
-      });
-      
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return { 
-    guardians, 
-    isLoading, 
-    error, 
-    formErrors,
-    setFormErrors,
-    addGuardian, 
-    removeGuardian,
-    updateGuardian
+  return {
+    guardians,
+    loading,
+    fetchGuardians,
+    notifyGuardians,
   };
 };

@@ -51,14 +51,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
       if (!error && data) {
         setProfile({
-          id: data.id as string,
-          first_name: data.first_name as string | undefined,
-          last_name: data.last_name as string | undefined,
-          email: data.email as string | undefined,
-          role: data.role as string | undefined
+          id: data.id,
+          first_name: data.first_name,
+          last_name: data.last_name,
+          email: data.email || user?.email, // Use email from profile or fallback to auth
+          role: data.role
         });
       } else {
         console.error('Error fetching user profile:', error);
+        
+        // If no profile found, create a minimal profile using auth data
+        if (user?.email) {
+          setProfile({
+            id: userId,
+            email: user.email,
+            role: user.user_metadata?.role || 'student'
+          });
+        }
       }
     };
     

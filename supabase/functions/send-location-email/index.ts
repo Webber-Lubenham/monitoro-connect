@@ -12,19 +12,6 @@ const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const resend = new Resend(resendApiKey);
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-interface LocationEmailRequest {
-  studentName: string;
-  studentEmail?: string;
-  guardianName: string;
-  guardianEmail: string;
-  latitude: number;
-  longitude: number;
-  timestamp: string;
-  accuracy?: number;
-  mapUrl?: string;
-  isEmergency?: boolean;
-}
-
 const handler = async (req: Request) => {
   // Get request details
   const origin = req.headers.get('origin');
