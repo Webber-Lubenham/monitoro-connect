@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import resendService from "@/services/email/resendService";
@@ -23,6 +22,10 @@ export const notifyGuardianViaEmail = async (
     if (error || !data) {
       console.error("Error fetching guardian for notification:", error);
       return false;
+    }
+    
+    if (data.email === null) {
+      throw new Error('Email cannot be null');
     }
     
     // Send email using resend service

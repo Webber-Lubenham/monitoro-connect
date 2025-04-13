@@ -1,5 +1,5 @@
-import { StudentHeader } from 'components/profile/StudentHeader';
-import { ProfileCard } from 'components/profile/ProfileCard';
+import StudentHeader from '@/components/profile/StudentHeader';
+import ProfileCard from '@/components/profile/ProfileCard';
 
 // Other existing code in the file...
 

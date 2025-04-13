@@ -1,4 +1,3 @@
-
 import { PostgrestFilterBuilder, PostgrestQueryBuilder } from '@supabase/postgrest-js';
 import { supabase } from './client';
 import { Database } from './database.types';
@@ -84,4 +83,16 @@ export function safeDataExtract<T>(
  */
 export function safeEntityCast<T>(entity: any): T {
   return entity as unknown as T;
+}
+
+export async function safeQuery<T extends object | null>(
+  query: PostgrestFilterBuilder<any, any, T, any, unknown>
+): Promise<T> {
+  const { data, error } = await query.throwOnError();
+  
+  if (error) {
+    throw error;
+  }
+  
+  return data as T;
 }
