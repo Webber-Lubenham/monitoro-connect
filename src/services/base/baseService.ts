@@ -1,5 +1,4 @@
-
-import { supabase } from '@/integrations/supabase';
+import { supabase } from '@/integrations/supabase/client.ts';
 
 // Export the supabase client as dbClient for consistent usage
 export const dbClient = supabase;
