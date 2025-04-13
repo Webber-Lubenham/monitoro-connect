@@ -1,4 +1,3 @@
-
 # Sistema Monitore - Plataforma de Monitoramento de Estudantes
 
 ![Sistema Monitore Logo](https://sistema-monitore.com.br/logo.png)
