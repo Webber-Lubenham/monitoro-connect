@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { StudentHeader } from '@/components/profile/StudentHeader';
 import { ProfileCard } from '@/components/profile/ProfileCard';
 import { useProfile } from '@/hooks/useProfile';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { Guardian } from '@/types/database.types';
 import { StudentProfileNotifications } from '@/components/profile/StudentProfileNotifications';
 import { Card, CardContent } from '@/components/ui/card';

@@ -1,5 +1,5 @@
 
-import { supabase } from '../integrations/supabase/client.ts';
+import { supabase } from '../lib/supabase';
 
 // Re-export to maintain backward compatibility
 export { supabase };

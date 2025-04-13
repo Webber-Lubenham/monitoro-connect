@@ -1,4 +1,5 @@
-import { supabase } from '@/integrations/supabase/client.ts';
+
+import { supabase } from '@/lib/supabase';
 import { logOperation } from '../../base/baseService';
 import { NotificationLocationData, NotificationOptions, NotificationResult } from './notificationTypes';
 import { getStudentNameWithFallback } from './notificationUtils';
