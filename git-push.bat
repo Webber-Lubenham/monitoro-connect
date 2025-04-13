@@ -9,10 +9,28 @@ echo 4. Push changes to the remote repository
 echo.
 
 :get_message
-set /p commit_message=Enter your commit message: 
+set /p commit_message=Enter your commit message (or press Enter for auto-generated message): 
 if "%commit_message%"=="" (
-    echo Commit message cannot be empty. Please try again.
-    goto get_message
+    echo.
+    echo Analyzing build errors...
+    for /f "tokens=*" %%a in ('npm run build 2^>^&1') do (
+        echo %%a | findstr /C:"error during build:" >nul
+        if not errorlevel 1 (
+            for /f "tokens=3 delims=:" %%b in ("%%a") do (
+                set "error_file=%%b"
+                set "error_file=!error_file:~1,-1!"
+                set "error_file=!error_file:src/=!"
+                set "error_file=!error_file:/=\!"
+                set "error_file=!error_file:.js=.ts!"
+                set commit_message=fix: update import path in !error_file!
+            )
+        )
+    )
+    if not defined commit_message (
+        set commit_message=chore: update project files
+    )
+    echo Auto-generated commit message: %commit_message%
+    echo.
 )
 
 echo.
