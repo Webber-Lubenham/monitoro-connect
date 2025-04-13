@@ -1,4 +1,4 @@
-import { PostgrestError, PostgrestQueryBuilder, PostgrestFilterBuilder } from '@supabase/supabase-js';
+import { PostgrestError } from '@supabase/supabase-js';
 import { supabase } from './client';
 
 export interface GenericStringError {
@@ -57,20 +57,20 @@ export class SafeQueryBuilder {
       const genericError = {
         message: options.errorMessage || `Failed to query ${table}`,
         details: err instanceof Error ? err.message : String(err),
-        code: 'query_execution_error'
+        hint: '',
+        code: 'query_execution_error',
+        name: 'PostgrestError' // Adding the required name property
       };
       
       return { 
         data: null, 
-        error: {
-          message: genericError.message,
-          details: genericError.details,
-          hint: '',
-          code: genericError.code
-        } 
+        error: genericError as PostgrestError
       };
     }
   }
   
   // Other methods like insert, update, delete, etc. can be added as needed
 }
+
+// Export a convenience function for the common case
+export const safeQuery = SafeQueryBuilder.select;

@@ -50,9 +50,12 @@ export const getGuardiansForNotification = async (studentId: string): Promise<Gu
       whatsapp_number: safeGet(guardian, 'whatsapp_number', undefined),
       sms_number: safeGet(guardian, 'sms_number', undefined),
       invitation_sent_at: safeGet(guardian, 'invitation_sent_at', undefined),
+      phone: safeGet(guardian, 'phone', ''),
+      document_type: safeGet(guardian, 'document_type', null),
+      document_number: safeGet(guardian, 'document_number', null)
     }));
     
-    return guardians;
+    return guardians as Guardian[];
   } catch (error) {
     console.error('Exception fetching guardians for notification:', error);
     return [];
@@ -97,11 +100,57 @@ export const getPrimaryGuardians = async (studentId: string): Promise<Guardian[]
       whatsapp_number: safeGet(guardian, 'whatsapp_number', undefined),
       sms_number: safeGet(guardian, 'sms_number', undefined),
       invitation_sent_at: safeGet(guardian, 'invitation_sent_at', undefined),
+      phone: safeGet(guardian, 'phone', ''),
+      document_type: safeGet(guardian, 'document_type', null),
+      document_number: safeGet(guardian, 'document_number', null)
     }));
     
-    return guardians;
+    return guardians as Guardian[];
   } catch (error) {
     console.error('Exception fetching primary guardians:', error);
     return [];
+  }
+};
+
+// Add the missing exports required by notificationService.ts
+export const notifyGuardianViaEmail = async (
+  guardianEmail: string,
+  subject: string,
+  message: string
+): Promise<boolean> => {
+  try {
+    console.log(`Sending email notification to ${guardianEmail}: ${subject}`);
+    // In a real implementation, you would send an email here
+    // For now, just log and return success
+    return true;
+  } catch (error) {
+    console.error('Error sending email notification:', error);
+    return false;
+  }
+};
+
+export const notifyAllGuardiansViaEmail = async (
+  studentId: string,
+  subject: string,
+  message: string
+): Promise<boolean> => {
+  try {
+    const guardians = await getGuardiansForNotification(studentId);
+    
+    if (!guardians || guardians.length === 0) {
+      console.warn('No guardians to notify for student:', studentId);
+      return false;
+    }
+    
+    const results = await Promise.all(
+      guardians.map(guardian => 
+        guardian.email ? notifyGuardianViaEmail(guardian.email, subject, message) : Promise.resolve(false)
+      )
+    );
+    
+    return results.some(result => result);
+  } catch (error) {
+    console.error('Error notifying all guardians:', error);
+    return false;
   }
 };

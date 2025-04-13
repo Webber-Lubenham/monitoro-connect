@@ -48,11 +48,7 @@ export const showLocationPermissionError = (onRetry: () => void) => {
       description: "Para enviar sua localização, permita o acesso à sua localização nas configurações do navegador.",
       variant: "destructive",
       duration: 10000,
-      // Using the original type signature of ToastAction
-      action: React.createElement(ToastAction, { 
-        altText: "Tentar novamente", 
-        onClick: onRetry 
-      }, "Tentar novamente")
+      action: <ToastAction altText="Tentar novamente" onClick={onRetry}>Tentar novamente</ToastAction>
     });
   } catch (error) {
     console.error("Error showing location permission error:", error);
@@ -70,11 +66,7 @@ export const showNotificationError = (errorMessage: string, onRetry: () => void)
       description: errorMessage,
       variant: "destructive",
       duration: 10000,
-      // Using the original type signature of ToastAction
-      action: React.createElement(ToastAction, { 
-        altText: "Tentar novamente", 
-        onClick: onRetry 
-      }, "Tentar novamente")
+      action: <ToastAction altText="Tentar novamente" onClick={onRetry}>Tentar novamente</ToastAction>
     });
   } catch (error) {
     console.error("Error showing notification error:", error);

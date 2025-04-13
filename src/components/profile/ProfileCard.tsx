@@ -1,7 +1,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Profile } from '@/hooks/useProfile';
+import { Profile } from '@/types/database.types';
 
 export interface ProfileCardProps {
   profile: Profile | null;
@@ -23,8 +23,8 @@ export const ProfileCard = ({ profile }: ProfileCardProps) => {
 
   // Get initials for avatar fallback
   const getInitials = () => {
-    if (profile.name) {
-      return profile.name.split(' ')
+    if (profile.full_name) {
+      return profile.full_name.split(' ')
         .map(n => n[0])
         .slice(0, 2)
         .join('')
@@ -41,13 +41,13 @@ export const ProfileCard = ({ profile }: ProfileCardProps) => {
       <CardContent className="flex flex-col items-center space-y-4">
         <Avatar className="h-24 w-24">
           {profile.avatar_url ? (
-            <AvatarImage src={profile.avatar_url} alt={profile.name || 'Perfil'} />
+            <AvatarImage src={profile.avatar_url} alt={profile.full_name || 'Perfil'} />
           ) : null}
           <AvatarFallback className="text-lg">{getInitials()}</AvatarFallback>
         </Avatar>
         
         <div className="text-center">
-          <h3 className="text-xl font-semibold">{profile.name || profile.email}</h3>
+          <h3 className="text-xl font-semibold">{profile.full_name || profile.email}</h3>
           <p className="text-sm text-gray-500">{profile.email}</p>
           <p className="text-sm text-gray-500 mt-1 capitalize">{profile.role || 'Estudante'}</p>
         </div>
@@ -76,3 +76,5 @@ export const ProfileCard = ({ profile }: ProfileCardProps) => {
     </Card>
   );
 }
+
+export default ProfileCard;

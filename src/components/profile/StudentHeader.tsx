@@ -1,7 +1,7 @@
 
 import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 
@@ -47,3 +47,5 @@ export const StudentHeader = () => {
     </div>
   );
 };
+
+export default StudentHeader;
