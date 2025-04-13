@@ -32,7 +32,7 @@ export const showFallbackNotification = (
       description,
       duration,
       variant,
-      action
+      action: action as any // Type cast to avoid TypeScript issues
     });
   } catch (error) {
     console.error("Error showing fallback notification:", error);
@@ -50,10 +50,11 @@ export const showLocationPermissionError = (onRetry: () => void) => {
       description: "Para enviar sua localização, permita o acesso à sua localização nas configurações do navegador.",
       variant: "destructive",
       duration: 10000,
-      action: React.createElement(ToastAction, { 
-        altText: "Tentar novamente", 
-        onClick: onRetry 
-      }, "Tentar novamente")
+      action: (
+        <ToastAction altText="Tentar novamente" onClick={onRetry}>
+          Tentar novamente
+        </ToastAction>
+      ) as any // Type cast to resolve TypeScript issues
     });
   } catch (error) {
     console.error("Error showing location permission error:", error);
@@ -71,10 +72,11 @@ export const showNotificationError = (errorMessage: string, onRetry: () => void)
       description: errorMessage,
       variant: "destructive",
       duration: 10000,
-      action: React.createElement(ToastAction, { 
-        altText: "Tentar novamente", 
-        onClick: onRetry 
-      }, "Tentar novamente")
+      action: (
+        <ToastAction altText="Tentar novamente" onClick={onRetry}>
+          Tentar novamente
+        </ToastAction>
+      ) as any // Type cast to resolve TypeScript issues
     });
   } catch (error) {
     console.error("Error showing notification error:", error);
