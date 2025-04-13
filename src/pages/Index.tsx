@@ -7,7 +7,7 @@ import { SignupForm } from "@/components/auth/SignupForm";
 import { PasswordResetForm } from "@/components/auth/PasswordResetForm";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client.ts";
-import { STORAGE_KEY } from "@/integrations/supabase/config";
+import { STORAGE_KEY } from "@/integrations/supabase/config.ts";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
