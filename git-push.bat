@@ -1,11 +1,13 @@
 @echo off
+setlocal enabledelayedexpansion
+
 echo Git Push Automation Script
 echo.
 echo This script will:
 echo 1. Check repository status
 echo 2. Add all changes to staging
 echo 3. Commit changes with your message
-echo 4. Push changes to the remote repository
+echo 4. Push changes to remote repository
 echo.
 
 :get_message
@@ -39,43 +41,45 @@ if "%commit_message%"=="" (
                 )
                 
                 set commit_message=!error_type! in !error_file!
+                goto :commit_ready
             )
         )
     )
     
     :: If no build error, check git status for changes
-    if not defined commit_message (
-        for /f "tokens=*" %%a in ('git status --porcelain') do (
-            set "changed_file=%%a"
-            set "changed_file=!changed_file:~3!"
-            
-            :: Determine change type based on file extension
-            echo !changed_file! | findstr /C:".ts" >nul
+    for /f "tokens=*" %%a in ('git status --porcelain') do (
+        set "changed_file=%%a"
+        set "changed_file=!changed_file:~3!"
+        
+        :: Determine change type based on file extension
+        echo !changed_file! | findstr /C:".ts" >nul
+        if not errorlevel 1 (
+            set "change_type=refactor: update TypeScript file"
+        ) else (
+            echo !changed_file! | findstr /C:".tsx" >nul
             if not errorlevel 1 (
-                set "change_type=refactor: update TypeScript file"
+                set "change_type=refactor: update React component"
             ) else (
-                echo !changed_file! | findstr /C:".tsx" >nul
+                echo !changed_file! | findstr /C:".json" >nul
                 if not errorlevel 1 (
-                    set "change_type=refactor: update React component"
+                    set "change_type=chore: update configuration"
                 ) else (
-                    echo !changed_file! | findstr /C:".json" >nul
+                    echo !changed_file! | findstr /C:".bat" >nul
                     if not errorlevel 1 (
-                        set "change_type=chore: update configuration"
+                        set "change_type=chore: update script"
                     ) else (
                         set "change_type=chore: update project files"
                     )
                 )
             )
-            
-            set commit_message=!change_type! !changed_file!
-            goto :commit_ready
         )
+        
+        set commit_message=!change_type! !changed_file!
+        goto :commit_ready
     )
     
     :: Default message if no specific changes detected
-    if not defined commit_message (
-        set commit_message=chore: update project files
-    )
+    set commit_message=chore: update project files
     
     :commit_ready
     echo Auto-generated commit message: %commit_message%
