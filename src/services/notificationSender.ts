@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+import { supabase } from '../lib/supabase.ts';
 
 export async function sendNotification(data: {
   studentName: string;

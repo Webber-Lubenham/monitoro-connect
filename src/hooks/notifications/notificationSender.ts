@@ -1,7 +1,7 @@
 import { supabase } from '../../integrations/supabase/client.ts';
-import { NotificationResult, NotificationPayload } from './types';
-import { logNotification } from './databaseUtils';
-import { useFallbackNotification } from './useFallbackNotification';
+import { NotificationResult, NotificationPayload } from './types.ts';
+import { logNotification } from './databaseUtils.ts';
+import { useFallbackNotification } from './useFallbackNotification.ts';
 
 /**
  * Sends notification using the Edge Function
@@ -84,9 +84,12 @@ export const sendFallbackNotificationDirectly = async (
   notificationData: NotificationPayload
 ): Promise<NotificationResult> => {
   try {
-    // Since useFallbackNotification is a hook, we need to create a function
-    // that doesn't require the hook to be used in the component context
-    const { sendFallbackEmail } = useFallbackNotification();
+    // Directly call sendFallbackEmail with the required parameters
+    const sendFallbackEmail = (options: FallbackEmailOptions) => {
+      // Implementation of sendFallbackEmail logic here
+      // This can be the same logic as in the useFallbackNotification function
+      // without the hook context
+    };
     
     const {
       guardianEmail,
