@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { useProfile } from "@/hooks/useProfile";
@@ -88,11 +89,17 @@ export const useNotificationLogic = (guardians: Guardian[]): NotificationLogicRe
             await new Promise((resolve) => setTimeout(resolve, 500));
           }
 
+          // Make sure we have valid email values
+          if (!guardian.email) {
+            console.warn(`Guardian ${guardian.id} has no email, skipping notification`);
+            continue;
+          }
+
           // Use the enhanced notification function with our current precise location
           const success = await sendLocationNotification(
             profile?.email || "Aluno",
             guardian.email,
-            guardian.nome,
+            guardian.nome || "Responsável",
             location
           );
 

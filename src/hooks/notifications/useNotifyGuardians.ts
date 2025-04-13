@@ -5,7 +5,20 @@ import { supabase } from '@/integrations/supabase/client';
 import { getLocationPromise, formatLocationInfo } from './locationUtils';
 import { saveLocationToDatabase, fetchGuardians, logNotification } from './databaseUtils';
 import { sendEdgeFunctionNotification, sendFallbackNotification } from './notificationSender';
-import { NotificationResult } from './types';
+
+// Define types for notification payloads
+interface NotificationPayload {
+  studentName: string;
+  studentEmail: string;
+  guardianName: string;
+  guardianEmail: string;
+  latitude: number;
+  longitude: number;
+  accuracy: number;
+  timestamp: string;
+  mapUrl: string;
+  isEmergency: boolean;
+}
 
 /**
  * Hook for sending notifications to guardians
@@ -87,13 +100,19 @@ export const useNotifyGuardians = () => {
 
       for (const guardian of guardians) {
         try {
+          // Skip guardians without email
+          if (!guardian.email) {
+            console.warn(`Guardian ${guardian.id} has no email, skipping notification`);
+            continue;
+          }
+
           console.log(`Sending notification to ${guardian.email}`);
           
           // Prepare payload for the Edge Function
-          const notificationData = {
+          const notificationData: NotificationPayload = {
             studentName: studentName,
             studentEmail: userEmail,
-            guardianName: guardian.nome,
+            guardianName: guardian.nome || 'Responsável',
             guardianEmail: guardian.email,
             latitude,
             longitude,
@@ -124,7 +143,7 @@ export const useNotifyGuardians = () => {
             );
           } else {
             const errorMessage = result.error || 'Erro desconhecido';
-            errorMessages.push(`Erro ao notificar ${guardian.nome}: ${errorMessage}`);
+            errorMessages.push(`Erro ao notificar ${guardian.nome || 'Responsável'}: ${errorMessage}`);
             console.error(`Error notifying guardian ${guardian.id}:`, errorMessage);
             
             // Try fallback method
@@ -142,7 +161,7 @@ export const useNotifyGuardians = () => {
           }
         } catch (error: any) {
           const errorMessage = error instanceof Error ? error.message : String(error);
-          errorMessages.push(`Falha ao enviar para ${guardian.nome}: ${errorMessage}`);
+          errorMessages.push(`Falha ao enviar para ${guardian.nome || 'Responsável'}: ${errorMessage}`);
           console.error(`Exception notifying guardian ${guardian.id}:`, error);
           
           // Try fallback method
@@ -191,6 +210,12 @@ export const useNotifyGuardians = () => {
     successCount: number
   ): Promise<boolean> => {
     try {
+      // Skip guardians without email
+      if (!guardian.email) {
+        console.warn(`Guardian ${guardian.id} has no email for fallback, skipping`);
+        return false;
+      }
+
       console.log(`Attempting fallback notification for ${guardian.email}`);
       
       // Format timestamp for display
@@ -199,7 +224,7 @@ export const useNotifyGuardians = () => {
       // Send fallback notification
       const fallbackResult = await sendFallbackNotification(
         guardian.email,
-        guardian.nome,
+        guardian.nome || 'Responsável',
         studentName,
         userEmail,
         latitude,

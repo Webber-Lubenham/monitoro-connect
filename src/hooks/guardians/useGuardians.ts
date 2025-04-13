@@ -1,80 +1,75 @@
 
-import { useGuardianLoader } from './useGuardianLoader';
-import { useGuardianAddition } from './useGuardianAddition';
-import { useGuardianRemoval } from './useGuardianRemoval';
-import { usePrimaryGuardian } from './usePrimaryGuardian';
-import { useGuardianInvitation } from './useGuardianInvitation';
-import { UseGuardiansReturn } from './types';
-import { useCallback } from 'react';
-import { GuardianForm } from '@/types/database.types';
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Guardian } from '@/types/database.types';
+import { useToast } from '@/components/ui/use-toast';
 
-/**
- * Main hook for guardian management
- * Combines all the specialized guardian hooks into one easy-to-use API
- */
-export const useGuardians = (): UseGuardiansReturn => {
-  const { 
-    guardians, 
-    isLoading, 
-    loadGuardians: originalLoadGuardians
-  } = useGuardianLoader();
+export const useGuardians = (studentId?: string) => {
+  const [guardians, setGuardians] = useState<Guardian[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  // Wrap loadGuardians to ensure we don't cause infinite loops
-  const loadGuardians = useCallback(async () => {
-    return await originalLoadGuardians();
-  }, [originalLoadGuardians]);
+  const fetchGuardians = useCallback(async () => {
+    if (!studentId) {
+      setLoading(false);
+      return;
+    }
 
-  const { 
-    errors,
-    addGuardian: originalAddGuardian 
-  } = useGuardianAddition(loadGuardians);
+    try {
+      setLoading(true);
+      setError(null);
 
-  // Wrap addGuardian to handle loading state
-  const addGuardian = useCallback(async (data: GuardianForm) => {
-    const result = await originalAddGuardian(data);
-    return result;
-  }, [originalAddGuardian]);
+      const { data, error: fetchError } = await supabase
+        .from('guardians')
+        .select('*')
+        .eq('student_id', studentId);
 
-  const { 
-    removeGuardian: originalRemoveGuardian
-  } = useGuardianRemoval(loadGuardians);
+      if (fetchError) {
+        console.error('Error fetching guardians:', fetchError);
+        setError(fetchError.message);
+        toast({
+          title: 'Erro ao carregar responsáveis',
+          description: fetchError.message,
+          variant: 'destructive',
+        });
+        return;
+      }
 
-  // Wrap removeGuardian to handle loading state
-  const removeGuardian = useCallback(async (id: string) => {
-    await originalRemoveGuardian(id);
-  }, [originalRemoveGuardian]);
+      // Ensure we don't have null values in our data
+      const safeGuardians = data?.map(guardian => ({
+        ...guardian,
+        nome: guardian.nome || 'Sem nome',
+        email: guardian.email || '',
+        telefone: guardian.telefone || '',
+        status: guardian.status || 'pending',
+        created_at: guardian.created_at || new Date().toISOString(),
+        updated_at: guardian.updated_at || new Date().toISOString(),
+      })) || [];
 
-  const { 
-    setPrimaryGuardian: rawSetPrimaryGuardian
-  } = usePrimaryGuardian(loadGuardians);
+      setGuardians(safeGuardians as Guardian[]);
+    } catch (e) {
+      console.error('Exception in fetchGuardians:', e);
+      const errorMessage = e instanceof Error ? e.message : 'Erro desconhecido';
+      setError(errorMessage);
+      toast({
+        title: 'Erro ao carregar responsáveis',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [studentId, toast]);
 
-  // Wrapper for setPrimaryGuardian to handle getting the studentId from the guardian
-  const setPrimaryGuardian = useCallback(async (id: string) => {
-    const guardian = guardians.find(g => g.id === id);
-    if (!guardian) return;
-    
-    await rawSetPrimaryGuardian(id, guardian.student_id);
-  }, [guardians, rawSetPrimaryGuardian]);
-
-  // Add the invitation functionality
-  const {
-    sendGuardianInvitation: originalSendInvitation,
-    isSending
-  } = useGuardianInvitation();
-
-  // Wrap sendGuardianInvitation to match the expected return type (void instead of boolean)
-  const sendGuardianInvitation = useCallback(async (id: string) => {
-    await originalSendInvitation(id);
-  }, [originalSendInvitation]);
+  useEffect(() => {
+    fetchGuardians();
+  }, [fetchGuardians]);
 
   return {
     guardians,
-    isLoading,
-    errors,
-    loadGuardians,
-    addGuardian,
-    removeGuardian,
-    setPrimaryGuardian,
-    sendGuardianInvitation
+    loading,
+    error,
+    refreshGuardians: fetchGuardians,
   };
 };
