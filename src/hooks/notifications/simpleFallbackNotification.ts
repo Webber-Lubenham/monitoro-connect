@@ -22,7 +22,8 @@ export const showFallbackNotification = (
     title = "Notificação enviada",
     description = `Sua localização foi enviada para ${recipientEmail}`,
     duration = 5000,
-    variant = "default"
+    variant = "default",
+    action
   } = options;
 
   try {
@@ -31,6 +32,7 @@ export const showFallbackNotification = (
       description,
       duration,
       variant,
+      action
     });
   } catch (error) {
     console.error("Error showing fallback notification:", error);
