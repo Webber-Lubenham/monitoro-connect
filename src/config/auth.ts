@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase.ts';
+import { supabase } from '../integrations/supabase/client.ts';
 const STORAGE_KEY = 'sb-rsvjnndhbyyxktbczlnk-auth-token';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 

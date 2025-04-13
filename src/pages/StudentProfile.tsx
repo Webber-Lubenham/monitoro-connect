@@ -1,12 +1,16 @@
-
-import { useState, useEffect } from 'react';
-import { StudentHeader } from '@/components/profile/StudentHeader';
-import { ProfileCard } from '@/components/profile/ProfileCard';
-import { useProfile } from '@/hooks/useProfile';
-import { supabase } from '@/lib/supabase';
-import { Guardian } from '@/types/database.types';
-import { StudentProfileNotifications } from '@/components/profile/StudentProfileNotifications';
-import { Card, CardContent } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { StudentHeader } from '../components/profile/StudentHeader.tsx';
+import { ProfileCard } from '../components/profile/ProfileCard.tsx';
+import { useProfile } from '../hooks/useProfile.ts';
+import { supabase } from '../integrations/supabase/client.ts';
+interface Guardian {
+  id: string;
+  nome: string;
+  email: string;
+  student_id: string;
+}
+import { StudentProfileNotifications } from '../components/profile/StudentProfileNotifications.tsx';
+import { Card, CardContent } from '../components/ui/card.tsx';
 
 export function StudentProfile() {
   const { profile, loading } = useProfile();
@@ -19,17 +23,17 @@ export function StudentProfile() {
         if (!profile?.id) return;
 
         setIsLoadingGuardians(true);
-        const { data, error } = await supabase
+        const { data: guardiansData, error: guardiansError } = await supabase
           .from('guardians')
           .select('*')
           .eq('student_id', profile.id);
 
-        if (error) {
-          console.error('Error fetching guardians:', error);
+        if (guardiansError) {
+          console.error('Error fetching guardians:', guardiansError);
           return;
         }
 
-        setGuardians(data || []);
+        setGuardians(guardiansData || []);
       } catch (err) {
         console.error('Error in fetchGuardians:', err);
       } finally {

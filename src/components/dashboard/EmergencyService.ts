@@ -1,6 +1,6 @@
 
 import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "../../integrations/supabase/client";
 import { 
   notifyGuardiansViaEmail,
   notifyGuardiansDirectly,

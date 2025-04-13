@@ -1,11 +1,17 @@
-
+import * as React from 'react';
 import { LogOut } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase';
+import { Button } from '../../components/ui/button.tsx';
+import { useToast } from '../../hooks/use-toast.ts';
+import { supabase } from '../../integrations/supabase/client.ts';
 import { useNavigate } from 'react-router-dom';
 
-export const StudentHeader = () => {
+interface ToastProps {
+  title: string;
+  description: string;
+  variant?: 'default' | 'destructive';
+}
+
+export const StudentHeader: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -14,7 +20,7 @@ export const StudentHeader = () => {
       toast({
         title: "Saindo do sistema",
         description: "Você será redirecionado em instantes...",
-      });
+      } as ToastProps);
       
       const { error } = await supabase.auth.signOut();
       
@@ -29,7 +35,7 @@ export const StudentHeader = () => {
         title: "Erro ao sair",
         description: "Não foi possível sair do sistema. Tente novamente.",
         variant: "destructive",
-      });
+      } as ToastProps);
     }
   };
 

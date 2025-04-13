@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card } from '@components/ui/card';
+import { Button } from '@components/ui/button';
 import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { supabase } from '../integrations/supabase/client';
+import { toast } from '@hooks/use-toast';
 
 // Parse query parameters from URL
 const useQuery = () => {

@@ -1,30 +1,42 @@
-
+import * as React from "react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
-import { Card } from "@/components/ui/card";
-import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { Button } from "@/components/ui/button";
+import { supabase } from "../integrations/supabase/client";
+import { Card } from "../components/ui/card.tsx";
+import DashboardLayout from "../components/dashboard/DashboardLayout.tsx";
+import { Button } from "../components/ui/button.tsx";
 import { MapPin, Bell, LogOut, Users, Clock } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "../hooks/use-toast";
 
-const ParentDashboard = () => {
-  const [children, setChildren] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+interface Child {
+  id: string;
+  name: string;
+  grade?: string;
+  school_id?: string;
+}
+
+interface ToastProps {
+  title: string;
+  description: string;
+  variant?: "default" | "destructive";
+}
+
+const ParentDashboard: React.FC<{}> = () => {
+  const [children, setChildren] = useState<Child[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
-        if (!session) {
+        if (!session || sessionError) {
           window.location.href = '/';
           return;
         }
         
-        // Fetch children data for this parent
         const { data, error } = await supabase
           .from('children')
           .select('*')
@@ -36,7 +48,7 @@ const ParentDashboard = () => {
             title: "Erro",
             description: "Não foi possível carregar os dados dos seus filhos.",
             variant: "destructive",
-          });
+          } as ToastProps);
         } else {
           setChildren(data || []);
         }
@@ -56,7 +68,7 @@ const ParentDashboard = () => {
       toast({
         title: "Saindo do sistema",
         description: "Você será redirecionado em instantes...",
-      });
+      } as ToastProps);
       setTimeout(() => {
         window.location.href = '/';
       }, 1000);
@@ -66,7 +78,7 @@ const ParentDashboard = () => {
         title: "Erro",
         description: "Não foi possível fazer logout.",
         variant: "destructive",
-      });
+      } as ToastProps);
     }
   };
 

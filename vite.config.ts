@@ -8,9 +8,9 @@ import type { UserConfig } from 'vite';
 export default defineConfig(({ mode }: { mode: string }): UserConfig => ({
   server: {
     host: 'localhost',
-    port: 8080,
-    strictPort: true,
-    https: undefined, // Remove the boolean value
+    port: 3000,
+    strictPort: false,
+    https: undefined,
     cors: {
       origin: [
         'https://gptengineer.app',
