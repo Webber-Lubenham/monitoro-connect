@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { getLocationPromise, formatLocationInfo } from './locationUtils';
 import { saveLocationToDatabase, fetchGuardians, logNotification } from './databaseUtils';
 import { sendEdgeFunctionNotification, sendFallbackNotification } from './notificationSender';

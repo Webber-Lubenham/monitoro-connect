@@ -1,5 +1,5 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { logOperation } from '../../base/baseService';
 import { sendEmailViaEdgeFunction } from '../../email/core/edgeFunctionClient';
 import { NotificationLocationData, NotificationOptions, NotificationResult } from './notificationTypes';
