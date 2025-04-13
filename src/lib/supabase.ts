@@ -1,3 +1,4 @@
+
 import { supabase } from '../integrations/supabase/client.ts';
 import type { Database } from '../integrations/supabase/database.types.ts';
 

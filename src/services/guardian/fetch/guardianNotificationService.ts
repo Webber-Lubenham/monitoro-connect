@@ -1,5 +1,5 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client.ts';
 import { Guardian } from '@/types/database.types';
 
 // Safely get a property with fallback
