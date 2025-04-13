@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client.ts";
 import resendService from "@/services/email/resendService";
 import { useToast } from "@/hooks/use-toast";
 

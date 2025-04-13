@@ -1,11 +1,13 @@
 
 import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
-import { handleLogout } from '@/utils/authUtils';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
+import { useNavigate } from 'react-router-dom';
 
 export const StudentHeader = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const onLogout = async () => {
     try {
@@ -14,11 +16,13 @@ export const StudentHeader = () => {
         description: "Você será redirecionado em instantes...",
       });
       
-      const success = await handleLogout();
+      const { error } = await supabase.auth.signOut();
       
-      if (!success) {
-        throw new Error("Falha no processo de logout");
+      if (error) {
+        throw error;
       }
+      
+      navigate('/login');
     } catch (error) {
       console.error("Erro ao fazer logout:", error);
       toast({
@@ -43,3 +47,5 @@ export const StudentHeader = () => {
     </div>
   );
 };
+
+export default StudentHeader;

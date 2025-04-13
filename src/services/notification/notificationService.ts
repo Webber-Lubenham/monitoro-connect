@@ -1,7 +1,7 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import resendService from "@/services/email/resendService";
-import { notifyGuardianViaEmail, notifyAllGuardiansViaEmail } from "@/services/guardian/fetch/guardianNotificationService";
+import { getGuardiansForNotification, getPrimaryGuardians } from "@/services/guardian/fetch/guardianNotificationService";
 
 /**
  * Sends a location update notification to guardians
@@ -14,16 +14,7 @@ export const sendLocationUpdateNotification = async (
 ): Promise<boolean> => {
   try {
     // Fetch guardians who should receive notifications
-    const { data: guardians, error } = await supabase
-      .from("guardians")
-      .select("*")
-      .eq("student_id", studentId)
-      .eq("should_notify", true);
-    
-    if (error) {
-      console.error("Error fetching guardians for notification:", error);
-      return false;
-    }
+    const guardians = await getGuardiansForNotification(studentId);
     
     if (!guardians || guardians.length === 0) {
       console.log("No guardians to notify about location update");
@@ -44,10 +35,10 @@ export const sendLocationUpdateNotification = async (
     
     // Send notifications
     const results = await Promise.all(
-      guardians.map(async (guardian) => {
+      guardians.filter(guardian => guardian.email).map(async (guardian) => {
         return await resendService.sendGuardianNotification(
-          guardian.email,
-          guardian.nome,
+          guardian.email || '',
+          guardian.nome || 'Responsável',
           subject,
           message
         );
@@ -55,7 +46,7 @@ export const sendLocationUpdateNotification = async (
     );
     
     // Return true if at least one notification was sent successfully
-    return results.some((result: { success: boolean }) => result.success);
+    return results.some((result: any) => result?.success);
   } catch (error) {
     console.error("Error sending location notification:", error);
     return false;
@@ -86,8 +77,33 @@ export const sendEmergencyNotification = async (
     <p>Esta mensagem foi enviada automaticamente pelo Sistema Monitore em resposta a um alerta de emergência.</p>
   `;
   
-  // Notify all guardians regardless of notification preferences
-  return await notifyAllGuardiansViaEmail(studentId, subject, message);
+  try {
+    // Fetch all guardians for this student, regardless of notification preferences
+    const guardians = await getGuardiansForNotification(studentId);
+    
+    if (!guardians || guardians.length === 0) {
+      console.log("No guardians to notify for emergency alert");
+      return false;
+    }
+    
+    // Send notifications to all guardians
+    const results = await Promise.all(
+      guardians.filter(guardian => guardian.email).map(async (guardian) => {
+        return await resendService.sendGuardianNotification(
+          guardian.email || '',
+          guardian.nome || 'Responsável',
+          subject,
+          message
+        );
+      })
+    );
+    
+    // Return true if at least one notification was sent successfully
+    return results.some((result: any) => result?.success);
+  } catch (error) {
+    console.error("Error sending emergency notification:", error);
+    return false;
+  }
 };
 
 /**

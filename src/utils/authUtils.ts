@@ -1,6 +1,5 @@
-
-import { supabase } from "@/integrations/supabase/client";
-import { STORAGE_KEY } from "@/integrations/supabase/config";
+import { supabase } from "@/integrations/supabase/client.ts";
+import { STORAGE_KEY } from "@/integrations/supabase/config.ts";
 
 /**
  * Handles the logout process consistently across the application

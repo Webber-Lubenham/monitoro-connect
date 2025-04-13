@@ -1,4 +1,3 @@
-
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
@@ -7,8 +6,8 @@ import { LoginForm } from "@/components/auth/LoginForm";
 import { SignupForm } from "@/components/auth/SignupForm";
 import { PasswordResetForm } from "@/components/auth/PasswordResetForm";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { STORAGE_KEY } from "@/integrations/supabase/config";
+import { supabase } from "@/integrations/supabase/client.ts";
+import { STORAGE_KEY } from "@/integrations/supabase/config.ts";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 

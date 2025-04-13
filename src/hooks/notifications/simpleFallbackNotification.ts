@@ -1,75 +1,85 @@
 
 import { toast } from "@/components/ui/use-toast";
 import { ToastAction } from "@/components/ui/toast";
-import { createElement, ReactNode } from "react";
+import React from "react";
+
+export interface FallbackNotificationOptions {
+  title?: string;
+  description?: string;
+  duration?: number;
+  variant?: "default" | "destructive";
+  action?: React.ReactNode;
+}
 
 /**
- * Creates a fallback link for manual email notification
- * @param studentName The name of the student
- * @param guardianEmail The email of the guardian
- * @param latitude The latitude of the student's location
- * @param longitude The longitude of the student's location
- * @returns A mailto link with the guardian's email and location details
+ * Simple fallback notification that uses toast when other notification methods fail
  */
-export const createFallbackEmailLink = (
-  studentName: string,
-  guardianEmail: string,
-  latitude: number,
-  longitude: number
-): string => {
-  const subject = `Localização atual de ${studentName}`;
-  const mapLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
-  const body = `Olá,\n\nO aluno ${studentName} compartilhou sua localização atual com você.\n\nVer no mapa: ${mapLink}\n\nCoordenadas: ${latitude}, ${longitude}\n\nEste email foi enviado automaticamente pelo sistema de localização.`;
+export const showFallbackNotification = (
+  recipientEmail: string,
+  options: FallbackNotificationOptions = {}
+) => {
+  const {
+    title = "Notificação enviada",
+    description = `Sua localização foi enviada para ${recipientEmail}`,
+    duration = 5000,
+    variant = "default",
+    action
+  } = options;
 
-  return `mailto:${encodeURIComponent(guardianEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  try {
+    return toast({
+      title,
+      description,
+      duration,
+      variant,
+      action: action as any // Type cast to avoid TypeScript issues
+    });
+  } catch (error) {
+    console.error("Error showing fallback notification:", error);
+    return null;
+  }
 };
 
 /**
- * Shows a toast notification with a manual fallback option when automated notification fails
- * @param guardianEmail Email address of the guardian
- * @param guardianName Name of the guardian
- * @param studentName Name of the student
- * @param latitude Current latitude
- * @param longitude Current longitude
+ * Show a location permission error notification with retry action
  */
-export const showManualFallbackOption = (
-  guardianEmail: string,
-  guardianName: string,
-  studentName: string,
-  latitude: number,
-  longitude: number
-): void => {
-  const mailtoLink = createFallbackEmailLink(studentName, guardianEmail, latitude, longitude);
-
-  // Fix: Use JSX directly instead of createElement to avoid type issues
-  toast({
-    title: "Falha ao enviar notificação",
-    description: `Não foi possível enviar a notificação automaticamente para ${guardianName}. Você pode enviar manualmente clicando no botão abaixo.`,
-    variant: "destructive",
-    duration: 10000,
-    action: createElement(ToastAction, {
-      altText: "Enviar email manualmente", 
-      onClick: () => window.open(mailtoLink, "_blank")
-    }, "Enviar email manualmente")
-  });
+export const showLocationPermissionError = (onRetry: () => void) => {
+  try {
+    return toast({
+      title: "Permissão de localização negada",
+      description: "Para enviar sua localização, permita o acesso à sua localização nas configurações do navegador.",
+      variant: "destructive",
+      duration: 10000,
+      action: React.createElement(
+        ToastAction,
+        { altText: "Tentar novamente", onClick: onRetry },
+        "Tentar novamente"
+      ) as any // Type cast to resolve TypeScript issues
+    });
+  } catch (error) {
+    console.error("Error showing location permission error:", error);
+    return null;
+  }
 };
 
 /**
- * Shows a toast notification when a notification has been sent successfully
- * @param guardianEmail Email address of the guardian that was notified
- * @param guardianName Name of the guardian
+ * Show a notification error with try again action
  */
-export const showSuccessNotification = (
-  guardianEmail: string,
-  guardianName: string
-): void => {
-  toast({
-    title: "Notificação enviada com sucesso",
-    description: `${guardianName} (${guardianEmail}) foi notificado sobre sua localização atual.`,
-    duration: 5000,
-    action: createElement(ToastAction, {
-      altText: "OK", 
-      onClick: () => {}
-    }, "OK")
-  });
+export const showNotificationError = (errorMessage: string, onRetry: () => void) => {
+  try {
+    return toast({
+      title: "Erro ao enviar notificação",
+      description: errorMessage,
+      variant: "destructive",
+      duration: 10000,
+      action: React.createElement(
+        ToastAction,
+        { altText: "Tentar novamente", onClick: onRetry },
+        "Tentar novamente"
+      ) as any // Type cast to resolve TypeScript issues
+    });
+  } catch (error) {
+    console.error("Error showing notification error:", error);
+    return null;
+  }
 };

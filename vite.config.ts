@@ -1,16 +1,16 @@
-
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "node:path";
 import { componentTagger } from "lovable-tagger";
+import type { UserConfig } from 'vite';
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }: { mode: string }) => ({
+export default defineConfig(({ mode }: { mode: string }): UserConfig => ({
   server: {
     host: 'localhost',
     port: 8080,
     strictPort: true,
-    https: false, // Disable HTTPS for local development
+    https: undefined, // Remove the boolean value
     cors: {
       origin: [
         'https://gptengineer.app',
@@ -50,7 +50,14 @@ export default defineConfig(({ mode }: { mode: string }) => ({
   ].filter(Boolean),
   resolve: {
     alias: {
-      "@": path.resolve(new URL('.', import.meta.url).pathname, "./src"),
+      "@": path.resolve(__dirname, "./src"),
+      "@components": path.resolve(__dirname, "./src/components"),
+      "@pages": path.resolve(__dirname, "./src/pages"),
+      "@hooks": path.resolve(__dirname, "./src/hooks"),
+      "@lib": path.resolve(__dirname, "./src/lib"),
+      "@utils": path.resolve(__dirname, "./src/utils"),
+      "@services": path.resolve(__dirname, "./src/services"),
+      "@integrations": path.resolve(__dirname, "./src/integrations"),
     },
   },
   // Added build configuration

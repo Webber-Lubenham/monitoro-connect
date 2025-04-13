@@ -1,101 +1,92 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
+import { showLocationPermissionError } from '@/hooks/notifications/simpleFallbackNotification';
 
+/**
+ * Hook to handle requesting and checking location permission
+ */
 export const useLocationPermission = () => {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const permissionCheckRef = useRef<boolean>(false);
+  const [requesting, setRequesting] = useState(false);
 
-  // Check for location permissions on component mount and periodically
+  // Check permission status on mount
   useEffect(() => {
-    // Function to check geolocation permission
-    const checkGeolocationPermission = () => {
-      console.log("Checking geolocation permission...");
-      
-      // Check if geolocation is available
-      if (!("geolocation" in navigator)) {
-        console.error("Geolocation API not supported by this browser");
+    checkPermission();
+  }, []);
+
+  // Function to check current permission status
+  const checkPermission = async () => {
+    try {
+      if (!navigator.geolocation) {
         setHasPermission(false);
         return;
       }
-      
-      // Try to get the permission status if the browser supports it
+
+      // Try to get the permission state if available
       if (navigator.permissions && navigator.permissions.query) {
-        navigator.permissions.query({ name: 'geolocation' })
-          .then(permissionStatus => {
-            console.log("Current permission status:", permissionStatus.state);
-            setHasPermission(permissionStatus.state === 'granted');
-            
-            // Listen for permission changes
-            permissionStatus.onchange = () => {
-              console.log("Permission status changed to:", permissionStatus.state);
-              setHasPermission(permissionStatus.state === 'granted');
-            };
-            
-            // If permission is prompt, we'll test it by requesting location
-            if (permissionStatus.state === 'prompt') {
-              // Test geolocation access with a simple request
-              navigator.geolocation.getCurrentPosition(
-                () => {
-                  console.log("Geolocation test successful - permission granted");
-                  setHasPermission(true);
-                },
-                (error) => {
-                  console.error("Geolocation test failed:", error);
-                  if (error.code === error.PERMISSION_DENIED) {
-                    setHasPermission(false);
-                  }
-                },
-                { timeout: 5000, maximumAge: 0 }
-              );
-            }
-          })
-          .catch(err => {
-            console.error("Error checking location permission:", err);
-            // If we can't check permission, we'll find out when we try to use it
-            setHasPermission(null);
-          });
-      } else {
-        // For browsers without permission API, test with direct request
-        try {
-          navigator.geolocation.getCurrentPosition(
-            () => {
-              console.log("Geolocation test successful - permission granted");
-              setHasPermission(true);
-            },
-            (error) => {
-              console.error("Geolocation test failed:", error);
-              if (error.code === error.PERMISSION_DENIED) {
-                setHasPermission(false);
-              } else {
-                // For other errors, we're not sure if permission is denied
-                setHasPermission(null);
-              }
-            },
-            { timeout: 5000, maximumAge: 0 }
-          );
-        } catch (e) {
-          console.error("Exception during geolocation test:", e);
+        const result = await navigator.permissions.query({ name: 'geolocation' as PermissionName });
+        
+        if (result.state === 'granted') {
+          setHasPermission(true);
+        } else if (result.state === 'denied') {
+          setHasPermission(false);
+        } else {
+          // prompt state - we'll need to request
           setHasPermission(null);
         }
-      }
-    };
-    
-    // Check permission immediately
-    if (!permissionCheckRef.current) {
-      permissionCheckRef.current = true;
-      checkGeolocationPermission();
-    }
-    
-    // Set up periodic permission check
-    const permissionCheckInterval = setInterval(checkGeolocationPermission, 30000);
-    
-    return () => {
-      clearInterval(permissionCheckInterval);
-    };
-  }, []);
 
-  return { 
+        // Listen for permission changes
+        result.addEventListener('change', () => {
+          setHasPermission(result.state === 'granted');
+        });
+      } else {
+        // If permissions API is not available, we'll have to try accessing geolocation
+        navigator.geolocation.getCurrentPosition(
+          () => setHasPermission(true),
+          () => setHasPermission(false),
+          { timeout: 5000 }
+        );
+      }
+    } catch (error) {
+      console.error('Error checking location permission:', error);
+      setHasPermission(false);
+    }
+  };
+
+  // Function to request permission
+  const requestPermission = () => {
+    if (hasPermission === true) return; // Already granted
+    
+    setRequesting(true);
+    
+    navigator.geolocation.getCurrentPosition(
+      () => {
+        setHasPermission(true);
+        setRequesting(false);
+      },
+      (error) => {
+        console.error('Permission denied:', error);
+        setHasPermission(false);
+        setRequesting(false);
+        
+        // Show error notification with retry action
+        showLocationPermissionError(() => requestPermission());
+      },
+      { 
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 0
+      }
+    );
+  };
+
+  return {
     hasPermission,
+    requesting,
+    requestPermission,
+    checkPermission,
     setHasPermission
   };
 };
+
+export default useLocationPermission;

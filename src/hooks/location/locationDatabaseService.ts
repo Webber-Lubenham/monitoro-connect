@@ -1,5 +1,4 @@
-
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client.ts";
 import { Location, LocationUpdateResponse } from "./locationTypes";
 import { PostgrestError } from "@supabase/supabase-js";
 
